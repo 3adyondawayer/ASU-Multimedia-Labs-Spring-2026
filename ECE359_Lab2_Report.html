@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECE359 · Lab 2 Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════ ROOT / RESET */
+:root {
+  --ink:    #0e0f13;
+  --paper:  #f5f0e8;
+  --cream:  #ede8db;
+  --warm:   #d4cfc2;
+  --gold:   #c8922a;
+  --rust:   #b54a2a;
+  --forest: #2a5c45;
+  --navy:   #1e2d4a;
+  --chalk:  #f9f6ef;
+  --red-hi: #e63328;
+  --stamp:  rgba(180,74,42,0.12);
+  --code-bg:#1a1c22;
+  --code-fg:#e2d9c8;
+  --done-bg: rgba(42,92,69,0.08);
+  --done-border: rgba(42,92,69,0.35);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Lora', Georgia, serif;
+  font-size: 15.5px;
+  line-height: 1.8;
+  min-height: 100vh;
+  /* subtle grid paper texture */
+  background-image:
+    linear-gradient(rgba(200,146,42,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,146,42,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ═══════════════════════════════════════════ HEADER */
+.cover{
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 2rem;
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -10%, #2a1f0e 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, #1e2d4a22 0%, transparent 60%);
+}
+.cover::before{
+  content:'';
+  position:absolute;inset:0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 40px,
+    rgba(200,146,42,0.02) 40px,
+    rgba(200,146,42,0.02) 41px
+  );
+}
+.cover-inner{
+  position:relative;z-index:2;
+  text-align:center;
+  max-width:720px;
+}
+.cover-stamp{
+  display:inline-block;
+  border: 2px solid rgba(200,146,42,0.5);
+  color: rgba(200,146,42,0.7);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.25em;
+  text-transform:uppercase;
+  padding:0.35rem 1.2rem;
+  margin-bottom:2.5rem;
+  position:relative;
+  animation: fadeUp 0.8s ease both;
+}
+.cover-stamp::before,.cover-stamp::after{
+  content:'◆';
+  margin: 0 0.5rem;
+  font-size:0.5rem;
+  vertical-align:middle;
+  color:rgba(200,146,42,0.5);
+}
+.cover h1{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:clamp(3rem,8vw,6.5rem);
+  line-height:0.95;
+  color: var(--paper);
+  letter-spacing:-0.03em;
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+.cover h1 em{
+  display:block;
+  font-style:normal;
+  color: var(--gold);
+  font-size:0.55em;
+  letter-spacing:0.05em;
+  margin-top:0.2em;
+}
+.cover-meta{
+  margin-top:2.5rem;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1.5rem;
+  animation: fadeUp 0.8s 0.25s ease both;
+}
+.cover-meta-item{
+  border-top:1px solid rgba(200,146,42,0.3);
+  padding-top:0.7rem;
+  text-align:left;
+}
+.cover-meta-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.62rem;
+  letter-spacing:0.15em;
+  color:rgba(200,146,42,0.6);
+  text-transform:uppercase;
+  display:block;
+  margin-bottom:0.2rem;
+}
+.cover-meta-value{
+  color:var(--paper);
+  font-size:0.9rem;
+  font-family:'Syne',sans-serif;
+  font-weight:600;
+}
+.scroll-cue{
+  position:absolute;
+  bottom:2.5rem;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:0.5rem;
+  animation: bounce 2s infinite;
+}
+.scroll-cue span{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.15em;
+  color:rgba(200,146,42,0.5);
+  text-transform:uppercase;
+}
+.scroll-cue::after{
+  content:'↓';
+  color:rgba(200,146,42,0.5);
+  font-size:1.1rem;
+}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════════ PROGRESS BAR */
+.progress-bar-wrap{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background: var(--ink);
+  padding:0.6rem 2rem;
+  display:flex;
+  align-items:center;
+  gap:1.2rem;
+  box-shadow:0 2px 20px rgba(0,0,0,0.3);
+}
+.progress-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.12em;
+  color:rgba(200,146,42,0.7);
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.progress-track{
+  flex:1;
+  height:3px;
+  background:rgba(200,146,42,0.15);
+  border-radius:2px;
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;
+  background: linear-gradient(90deg, var(--gold), var(--rust));
+  border-radius:2px;
+  transition: width 0.5s ease;
+  width:0%;
+}
+.task-dots{
+  display:flex;gap:0.4rem;
+}
+.task-dot{
+  width:7px;height:7px;
+  border-radius:50%;
+  border:1px solid rgba(200,146,42,0.4);
+  transition:background 0.3s, transform 0.3s;
+  cursor:pointer;
+}
+.task-dot.done{
+  background:var(--gold);
+  border-color:var(--gold);
+  transform:scale(1.2);
+}
+
+/* ═══════════════════════════════════════════ MAIN CONTAINER */
+.container{
+  max-width:860px;
+  margin:0 auto;
+  padding:4rem 2rem 6rem;
+}
+
+/* ═══════════════════════════════════════════ SECTION BREAK */
+.section-break{
+  display:flex;align-items:center;gap:1rem;
+  margin:3rem 0 2rem;
+}
+.section-break-line{flex:1;height:1px;background:var(--warm);}
+.section-break-text{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.15em;
+  color:var(--gold);
+  text-transform:uppercase;
+}
+
+/* ═══════════════════════════════════════════ TASK CARD */
+.task-card{
+  background:var(--chalk);
+  border:1.5px solid var(--warm);
+  border-radius:4px;
+  margin-bottom:1.8rem;
+  overflow:hidden;
+  transition: box-shadow 0.3s, border-color 0.3s, transform 0.2s;
+  position:relative;
+}
+.task-card::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:4px;
+  background:var(--warm);
+  transition:background 0.3s;
+}
+.task-card.done{
+  border-color:var(--done-border);
+  background:var(--done-bg);
+}
+.task-card.done::before{background:var(--forest);}
+.task-card.active{
+  border-color: rgba(200,146,42,0.5);
+  box-shadow: 0 8px 40px rgba(200,146,42,0.12), 0 2px 8px rgba(0,0,0,0.06);
+}
+.task-card.active::before{background:var(--gold);}
+
+/* TASK HEADER */
+.task-header{
+  display:flex;
+  align-items:center;
+  gap:1.2rem;
+  padding:1.2rem 1.5rem;
+  cursor:pointer;
+  user-select:none;
+  transition:background 0.2s;
+}
+.task-header:hover{background:rgba(200,146,42,0.03);}
+.task-num-wrap{
+  flex-shrink:0;
+  width:2.6rem;height:2.6rem;
+  border:1.5px solid var(--warm);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.3s;
+  position:relative;
+}
+.done .task-num-wrap{
+  background:var(--forest);
+  border-color:var(--forest);
+}
+.task-num-wrap .num{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:0.85rem;
+  color:var(--ink);
+  transition:opacity 0.2s;
+}
+.done .task-num-wrap .num{opacity:0;}
+.task-num-wrap .check{
+  position:absolute;
+  color:white;
+  font-size:1rem;
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.done .task-num-wrap .check{opacity:1;}
+.task-title-group{flex:1;}
+.task-category{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.62rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--gold);
+  display:block;
+  margin-bottom:0.15rem;
+}
+.task-title{
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:1.05rem;
+  color:var(--ink);
+  line-height:1.2;
+}
+.task-meta{
+  display:flex;
+  align-items:center;
+  gap:0.7rem;
+  flex-shrink:0;
+}
+.diff-badge{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.6rem;
+  letter-spacing:0.08em;
+  padding:0.2rem 0.5rem;
+  border-radius:2px;
+  text-transform:uppercase;
+}
+.diff-easy{background:rgba(42,92,69,0.1);color:var(--forest);border:1px solid rgba(42,92,69,0.25);}
+.diff-med {background:rgba(200,146,42,0.1);color:var(--gold);  border:1px solid rgba(200,146,42,0.25);}
+.task-arrow{
+  font-size:0.75rem;color:var(--warm);
+  transition:transform 0.3s;
+}
+.active .task-arrow,.open .task-arrow{transform:rotate(180deg);}
+.done-stamp{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:0.6rem;
+  letter-spacing:0.15em;
+  color:var(--forest);
+  text-transform:uppercase;
+  border:1.5px solid var(--forest);
+  padding:0.15rem 0.4rem;
+  opacity:0;
+  transition:opacity 0.3s;
+}
+.done .done-stamp{opacity:1;}
+
+/* TASK BODY */
+.task-body{
+  display:none;
+  border-top:1px solid var(--warm);
+  animation: slideIn 0.3s ease;
+}
+.task-body.open{display:block;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.task-body-inner{padding:1.5rem 1.8rem 1.5rem 2.2rem;}
+
+/* OBJECTIVE + CONTEXT */
+.objective{
+  font-style:italic;
+  color:#4a4840;
+  font-size:0.95rem;
+  margin-bottom:1.2rem;
+  padding-left:1rem;
+  border-left:2px solid var(--gold);
+}
+
+/* ═══════════════════════════════════════════ CODE BLOCK */
+.code-wrap{
+  background:var(--code-bg);
+  border-radius:6px;
+  overflow:hidden;
+  margin:1.2rem 0;
+  box-shadow:0 4px 20px rgba(0,0,0,0.25);
+}
+.code-topbar{
+  display:flex;align-items:center;gap:0.6rem;
+  background:#12141a;
+  padding:0.55rem 1rem;
+  border-bottom:1px solid #2a2d36;
+}
+.code-dot{width:10px;height:10px;border-radius:50%;}
+.code-dot.r{background:#ff5f57;}
+.code-dot.y{background:#febc2e;}
+.code-dot.g{background:#28c840;}
+.code-filename{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.68rem;
+  color:#6b7280;
+  margin-left:0.4rem;
+  letter-spacing:0.05em;
+}
+.copy-btn{
+  margin-left:auto;
+  background:none;border:1px solid #2a2d36;
+  color:#6b7280;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.62rem;
+  letter-spacing:0.08em;
+  padding:0.2rem 0.6rem;
+  border-radius:3px;
+  cursor:pointer;
+  text-transform:uppercase;
+  transition:all 0.2s;
+}
+.copy-btn:hover{border-color:#6b7280;color:#aaa;}
+.copy-btn.copied{border-color:#28c840;color:#28c840;}
+pre{
+  padding:1.2rem 1.4rem;
+  overflow-x:auto;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.8rem;
+  line-height:1.7;
+  color:var(--code-fg);
+}
+/* syntax */
+.kw {color:#f8a95a;}
+.fn {color:#79b8ff;}
+.st {color:#9ecbff;}
+.cm {color:#4a5568;font-style:italic;}
+.num{color:#85e89d;}
+.op {color:#b392f0;}
+.hi {color:#ffd33d;}
+.var{color:#e2d9c8;}
+.nc {color:#79b8ff;}  /* number/const */
+
+/* ═══════════════════════════════════════════ OUTPUT PANEL */
+.output-panel{
+  background:#0d0f14;
+  border:1px solid #1e2230;
+  border-radius:6px;
+  overflow:hidden;
+  margin:1rem 0;
+}
+.output-topbar{
+  display:flex;align-items:center;gap:0.6rem;
+  background:#0a0c10;
+  padding:0.45rem 1rem;
+  border-bottom:1px solid #1e2230;
+}
+.output-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.62rem;
+  letter-spacing:0.12em;
+  color:#4a5568;
+  text-transform:uppercase;
+}
+.output-ok{
+  margin-left:auto;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.6rem;
+  color:#28c840;
+  letter-spacing:0.08em;
+}
+.output-content{
+  padding:1rem 1.4rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.78rem;
+  color:#8b9eb5;
+  line-height:1.65;
+}
+
+/* IMAGE SIMULATION */
+.img-sim{
+  border:1px solid #1e2230;
+  border-radius:6px;
+  overflow:hidden;
+  display:inline-block;
+  margin:0.5rem 0.5rem 0.5rem 0;
+  vertical-align:top;
+}
+.img-sim-label{
+  background:#0a0c10;
+  padding:0.3rem 0.7rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.6rem;
+  color:#4a5568;
+  border-bottom:1px solid #1e2230;
+  letter-spacing:0.08em;
+}
+.img-canvas{
+  display:block;
+}
+
+/* HISTOGRAM BARS */
+.hist-sim{
+  display:flex;
+  align-items:flex-end;
+  gap:1px;
+  height:60px;
+  padding:0.5rem 0.7rem 0.3rem;
+  background:#0d0f14;
+}
+.hist-bar{
+  flex:1;
+  background:rgba(79,168,220,0.6);
+  border-radius:1px 1px 0 0;
+  min-height:2px;
+  transition:height 0.5s ease;
+}
+
+/* ═══════════════════════════════════════════ HINT SYSTEM */
+.hints-area{
+  margin:1.2rem 0 0.5rem;
+  display:flex;flex-wrap:wrap;gap:0.6rem;
+}
+.hint-btn{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  background:none;
+  border:1px solid rgba(200,146,42,0.35);
+  color:var(--gold);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.08em;
+  padding:0.35rem 0.8rem;
+  border-radius:2px;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-transform:uppercase;
+}
+.hint-btn:hover{background:rgba(200,146,42,0.08);border-color:var(--gold);}
+.hint-btn.revealed{
+  background:rgba(200,146,42,0.12);
+  border-color:var(--gold);
+  color:var(--rust);
+}
+.hint-icon{font-size:0.7rem;}
+.hint-content{
+  display:none;
+  background:linear-gradient(135deg,rgba(200,146,42,0.06),rgba(200,146,42,0.02));
+  border:1px solid rgba(200,146,42,0.2);
+  border-left:3px solid var(--gold);
+  border-radius:0 4px 4px 0;
+  padding:0.9rem 1.1rem;
+  font-size:0.88rem;
+  color:#4a4030;
+  margin:0.5rem 0;
+  animation:fadeIn 0.25s ease;
+}
+.hint-content.open{display:block;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ANSWER REVEAL */
+.answer-toggle{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  background:none;
+  border:1px solid rgba(181,74,42,0.35);
+  color:var(--rust);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.08em;
+  padding:0.35rem 0.8rem;
+  border-radius:2px;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-transform:uppercase;
+}
+.answer-toggle:hover{background:rgba(181,74,42,0.08);border-color:var(--rust);}
+.answer-toggle.revealed{background:rgba(181,74,42,0.1);color:#8b3520;}
+.answer-block{
+  display:none;
+  margin-top:0.8rem;
+}
+.answer-block.open{display:block;}
+.answer-header{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--rust);
+  margin-bottom:0.5rem;
+  display:flex;align-items:center;gap:0.5rem;
+}
+.answer-header::after{content:'';flex:1;height:1px;background:rgba(181,74,42,0.2);}
+
+/* COMPLETE BUTTON */
+.complete-btn{
+  display:inline-flex;align-items:center;gap:0.6rem;
+  background:var(--ink);
+  border:none;
+  color:var(--paper);
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:0.78rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  padding:0.6rem 1.3rem;
+  border-radius:3px;
+  cursor:pointer;
+  margin-top:1.2rem;
+  transition:all 0.25s;
+}
+.complete-btn:hover{background:var(--forest);transform:translateY(-1px);}
+.complete-btn:active{transform:translateY(0);}
+.done .complete-btn{
+  background:var(--forest);
+  pointer-events:none;
+}
+
+/* ═══════════════════════════════════════════ KEY CONCEPTS BOX */
+.concept-box{
+  background:rgba(30,45,74,0.05);
+  border:1px solid rgba(30,45,74,0.15);
+  border-radius:4px;
+  padding:1rem 1.2rem;
+  margin:1rem 0;
+  font-size:0.9rem;
+}
+.concept-box-title{
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:0.75rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--navy);
+  margin-bottom:0.5rem;
+}
+.formula-line{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.82rem;
+  color:var(--navy);
+  background:rgba(30,45,74,0.06);
+  display:inline-block;
+  padding:0.3rem 0.6rem;
+  border-radius:3px;
+  margin:0.3rem 0;
+}
+
+/* ═══════════════════════════════════════════ SUMMARY TABLE */
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:0.8rem;
+  margin:1.5rem 0;
+}
+.summary-item{
+  background:var(--chalk);
+  border:1px solid var(--warm);
+  border-radius:4px;
+  padding:0.8rem;
+  text-align:center;
+  transition:all 0.3s;
+}
+.summary-item.done-item{
+  background:rgba(42,92,69,0.06);
+  border-color:rgba(42,92,69,0.25);
+}
+.si-num{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:1.3rem;
+  color:var(--warm);
+  display:block;
+  transition:color 0.3s;
+}
+.done-item .si-num{color:var(--forest);}
+.si-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.58rem;
+  letter-spacing:0.08em;
+  color:#888;
+  text-transform:uppercase;
+  line-height:1.3;
+}
+
+/* ═══════════════════════════════════════════ FOOTER */
+footer{
+  background:var(--ink);
+  color:rgba(200,146,42,0.5);
+  text-align:center;
+  padding:2rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+}
+
+/* ═══════════════════════════════════════════ MISC */
+p{margin-bottom:0.8rem;}
+strong{font-weight:normal;color:var(--ink);font-style:italic;}
+.note{
+  font-size:0.82rem;
+  color:#6b6258;
+  font-style:italic;
+  margin:0.5rem 0;
+}
+.two-col{display:flex;gap:1rem;flex-wrap:wrap;}
+.two-col>*{flex:1;min-width:200px;}
+
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:repeat(3,1fr);}
+  .cover-meta{grid-template-columns:1fr;}
+  pre{font-size:0.72rem;}
+  .two-col{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════ COVER PAGE -->
+<div class="cover" id="top">
+  <div class="cover-inner">
+    <div class="cover-stamp" style="animation-delay:0s">ECE 359 · Spring 2025</div>
+    <h1>Lab 2<em>Image Enhancement</em></h1>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Subject</span>
+        <span class="cover-meta-value">Signal Processing for Multimedia</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Topics</span>
+        <span class="cover-meta-value">Pointwise · Histograms · Spatial</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Tasks</span>
+        <span class="cover-meta-value">10 Experiments</span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue"><span>Begin Lab</span></div>
+</div>
+
+<!-- ══════════════════════════════════ PROGRESS BAR -->
+<div class="progress-bar-wrap">
+  <span class="progress-label">Progress</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="task-dots" id="taskDots"></div>
+  <span class="progress-label" id="progressCount" style="min-width:3rem;text-align:right;">0/10</span>
+</div>
+
+<!-- ══════════════════════════════════ MAIN -->
+<div class="container">
+
+  <div class="section-break">
+    <div class="section-break-line"></div>
+    <div class="section-break-text">Task Overview</div>
+    <div class="section-break-line"></div>
+  </div>
+
+  <!-- Summary grid -->
+  <div class="summary-grid" id="summaryGrid">
+    <!-- populated by JS -->
+  </div>
+  <p class="note" style="text-align:center;">Click any task card below to expand it — mark it complete when done to track your progress.</p>
+
+  <div class="section-break" style="margin-top:2.5rem;">
+    <div class="section-break-line"></div>
+    <div class="section-break-text">Part I — Image Basics &amp; Pointwise Operations</div>
+    <div class="section-break-line"></div>
+  </div>
+
+<!-- ══════════════════════════════════ TASK 1 -->
+<div class="task-card" id="task1">
+  <div class="task-header" onclick="toggleTask(1)">
+    <div class="task-num-wrap"><span class="num">1</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">MATLAB Basics</span>
+      <div class="task-title">Load, Inspect &amp; Display an Image</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body1">
+  <div class="task-body-inner">
+    <p class="objective">Read an image from disk, inspect its dimensions and data type, and display it. This is the starting point for every image processing task — you must always know what kind of data you're dealing with before applying any transformation.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Key Concept — Image as a Matrix</div>
+      <p>A grayscale image is simply an M×N matrix of numbers. Each number is one pixel's brightness. A color image is M×N×3 — three such matrices stacked, one for each color channel (R, G, B).</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task1_load.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="cm">% ── Task 1: Load, inspect, and display an image ──────────</span>
+
+<span class="fn">clear</span>; <span class="fn">clc</span>; <span class="fn">close all</span>;
+
+<span class="cm">% Step 1 — Read the image from disk</span>
+<span class="var">I</span> <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'01.jpg'</span>);
+
+<span class="cm">% Step 2 — Inspect size and class</span>
+[<span class="var">M</span>, <span class="var">N</span>, <span class="var">P</span>] <span class="op">=</span> <span class="fn">size</span>(<span class="var">I</span>);          <span class="cm">% M=rows, N=cols, P=channels</span>
+<span class="fn">fprintf</span>(<span class="st">'Size: %d x %d x %d\n'</span>, <span class="var">M</span>, <span class="var">N</span>, <span class="var">P</span>);
+<span class="fn">fprintf</span>(<span class="st">'Class: %s\n'</span>, <span class="fn">class</span>(<span class="var">I</span>)); <span class="cm">% should print 'uint8'</span>
+<span class="fn">fprintf</span>(<span class="st">'Min: %d  Max: %d\n'</span>, <span class="fn">min</span>(<span class="var">I</span>(<span class="op">:</span>)), <span class="fn">max</span>(<span class="var">I</span>(<span class="op">:</span>)));
+
+<span class="cm">% Step 3 — Display the image</span>
+<span class="fn">figure</span>(<span class="st">'Name'</span>, <span class="st">'Task 1 — Original Image'</span>);
+<span class="fn">imshow</span>(<span class="var">I</span>);
+<span class="fn">title</span>(<span class="st">'Original Image'</span>, <span class="st">'FontSize'</span>, <span class="num">14</span>);
+
+<span class="cm">% Step 4 — Save as PNG (lossless)</span>
+<span class="fn">imwrite</span>(<span class="var">I</span>, <span class="st">'Fisherman.png'</span>);</pre>
+    </div>
+
+    <div class="output-panel">
+      <div class="output-topbar">
+        <span class="output-label">Command Window Output</span>
+        <span class="output-ok">● expected output</span>
+      </div>
+      <div class="output-content">
+Size: 480 x 640 x 3<br>
+Class: uint8<br>
+Min: 0  Max: 255
+      </div>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h1a')"><span class="hint-icon">💡</span>What does P=1 mean?</button>
+      <button class="hint-btn" onclick="toggleHint(this,'h1b')"><span class="hint-icon">💡</span>Why save as PNG not JPEG?</button>
+    </div>
+    <div class="hint-content" id="h1a">When P=1 (or size gives only M×N), your image is already <strong>grayscale</strong>. When P=3, it's a color (RGB) image with three channels. You can check by looking at the third dimension from <code>size()</code>.</div>
+    <div class="hint-content" id="h1b">JPEG uses lossy compression — every time you save a JPEG, it discards some data to reduce file size. PNG is lossless, so pixel values are preserved exactly. For lab work where accuracy matters, always prefer PNG for saving intermediate results.</div>
+
+    <button class="complete-btn" onclick="markDone(1)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ TASK 2 -->
+<div class="task-card" id="task2">
+  <div class="task-header" onclick="toggleTask(2)">
+    <div class="task-num-wrap"><span class="num">2</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Pointwise Operations</span>
+      <div class="task-title">Apply the Negative Transformation</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body2">
+  <div class="task-body-inner">
+    <p class="objective">Invert a grayscale image using the negative transformation. Dark regions become bright and vice versa. Notice how details that were hard to see in shadow regions become visible after inversion.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Formula</div>
+      <span class="formula-line">s = (L − 1) − r = 255 − r &nbsp;&nbsp; (for uint8)</span>
+      <p style="margin-top:0.6rem;font-size:0.88rem;">Every pixel's intensity is reflected about the midpoint 127.5. A pixel that was 200 (light) becomes 55 (dark). A pixel that was 20 (near black) becomes 235 (near white).</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task2_negative.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>   <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'05.jpg'</span>);
+<span class="var">Ig</span>  <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);          <span class="cm">% convert to grayscale first</span>
+<span class="var">Id</span>  <span class="op">=</span> <span class="fn">double</span>(<span class="var">Ig</span>);           <span class="cm">% cast to double (values stay 0–255)</span>
+
+<span class="cm">% Apply negative: s = 255 - r</span>
+<span class="var">neg</span> <span class="op">=</span> <span class="fn">uint8</span>(<span class="num">255</span> <span class="op">-</span> <span class="var">Id</span>);
+
+<span class="cm">% Show side by side</span>
+<span class="fn">figure</span>;
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">2</span>,<span class="num">1</span>); <span class="fn">imshow</span>(<span class="var">Ig</span>);  <span class="fn">title</span>(<span class="st">'Original'</span>);
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">2</span>,<span class="num">2</span>); <span class="fn">imshow</span>(<span class="var">neg</span>); <span class="fn">title</span>(<span class="st">'Negative  s = 255-r'</span>);</pre>
+    </div>
+
+    <!-- Pixel simulation -->
+    <div class="output-panel">
+      <div class="output-topbar">
+        <span class="output-label">Pixel Value Simulation</span>
+        <span class="output-ok">● sample values</span>
+      </div>
+      <div class="output-content">
+r (input)  →  s = 255 - r  (output)<br>
+─────────────────────────────────────<br>
+<span style="color:#85e89d;">  0</span>  (black)     →  <span style="color:#85e89d;">255</span>  (white)<br>
+<span style="color:#85e89d;"> 64</span>  (dark gray) →  <span style="color:#85e89d;">191</span>  (light gray)<br>
+<span style="color:#85e89d;">128</span>  (mid gray)  →  <span style="color:#85e89d;">127</span>  (mid gray)<br>
+<span style="color:#85e89d;">200</span>  (light)     →  <span style="color:#85e89d;"> 55</span>  (dark)<br>
+<span style="color:#85e89d;">255</span>  (white)     →  <span style="color:#85e89d;">  0</span>  (black)
+      </div>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h2a')"><span class="hint-icon">💡</span>Why double() before subtracting?</button>
+      <button class="hint-btn" onclick="toggleHint(this,'h2b')"><span class="hint-icon">💡</span>Why rgb2gray first?</button>
+    </div>
+    <div class="hint-content" id="h2a">In uint8 arithmetic, values saturate — they clamp to [0,255]. So <code>uint8(10) - uint8(20)</code> gives <code>0</code> not <code>-10</code>. By converting to double first, subtraction works correctly with the full integer range, then we cast back to uint8.</div>
+    <div class="hint-content" id="h2b">The negative formula s=255-r is a scalar operation on a single intensity value. For RGB, you'd have to apply it separately to each of the 3 channels (or let MATLAB broadcast it automatically — both work). Converting to grayscale first simplifies visualization.</div>
+
+    <button class="complete-btn" onclick="markDone(2)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ TASK 3 -->
+<div class="task-card" id="task3">
+  <div class="task-header" onclick="toggleTask(3)">
+    <div class="task-num-wrap"><span class="num">3</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Pointwise Operations</span>
+      <div class="task-title">Gamma Correction with Power Law</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body3">
+  <div class="task-body-inner">
+    <p class="objective">Apply the power law transformation with three different gamma values (γ = 0.4, 1.0, 2.5) and arrange the results in a single figure. Observe how gamma below 1 brightens the image while gamma above 1 darkens it.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Formula &amp; Rule</div>
+      <span class="formula-line">s = c · r<sup>γ</sup> &nbsp;&nbsp; (r normalized to [0,1], c = 1)</span>
+      <p style="margin-top:0.6rem;font-size:0.88rem;">γ &lt; 1 → curve bows upward → dark pixels lifted → <em>brighter image</em>. γ &gt; 1 → curve bows downward → mid-tones pushed down → <em>darker, higher contrast</em>. γ = 1 → identity (no change).</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task3_gamma.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>   <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'05.jpg'</span>);
+<span class="var">Ig</span>  <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);
+<span class="var">In</span>  <span class="op">=</span> <span class="fn">im2double</span>(<span class="var">Ig</span>);        <span class="cm">% normalize to [0,1] — essential for power law!</span>
+
+<span class="cm">% Three gamma values to compare</span>
+<span class="var">gammas</span> <span class="op">=</span> [<span class="num">0.4</span>, <span class="num">1.0</span>, <span class="num">2.5</span>];
+
+<span class="fn">figure</span>(<span class="st">'Name'</span>, <span class="st">'Task 3 — Gamma Correction'</span>);
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">4</span>,<span class="num">1</span>); <span class="fn">imshow</span>(<span class="var">Ig</span>); <span class="fn">title</span>(<span class="st">'Original'</span>);
+
+<span class="kw">for</span> <span class="var">k</span> <span class="op">=</span> <span class="num">1</span><span class="op">:</span><span class="num">3</span>
+    <span class="var">g</span>   <span class="op">=</span> <span class="var">gammas</span>(<span class="var">k</span>);
+    <span class="var">out</span> <span class="op">=</span> <span class="var">In</span> <span class="op">.^</span> <span class="var">g</span>;              <span class="cm">% s = r^gamma (c=1, [0,1] range)</span>
+    <span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">4</span>,<span class="var">k</span><span class="op">+</span><span class="num">1</span>);
+    <span class="fn">imshow</span>(<span class="var">out</span>);
+    <span class="fn">title</span>(<span class="fn">sprintf</span>(<span class="st">'\gamma = %.1f'</span>, <span class="var">g</span>));
+<span class="kw">end</span></pre>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h3a')"><span class="hint-icon">💡</span>Why use im2double not double()?</button>
+      <button class="hint-btn" onclick="toggleHint(this,'h3b')"><span class="hint-icon">💡</span>What does γ = 0.9 (from Ex. 2) do?</button>
+      <button class="answer-toggle" onclick="toggleAnswer(this,'ans3')">⊕ Show Expected Result</button>
+    </div>
+    <div class="hint-content" id="h3a"><code>im2double(I)</code> divides all values by 255, giving a range of [0,1]. <code>double(I)</code> just changes the data type, leaving values in [0,255]. For the power law formula with c=1, you <em>need</em> [0,1] — otherwise r=200 raised to power 0.4 gives ~200^0.4 ≈ 11, which is too dark. The normalization is part of the formula.</div>
+    <div class="hint-content" id="h3b">γ = 0.9 is very close to 1, so the effect is subtle — a very slight brightening of dark pixels. It's a gentle correction, not a dramatic change. You'd barely notice it on a well-exposed image, but it can recover shadow detail in slightly underexposed photos.</div>
+    <div class="answer-block" id="ans3">
+      <div class="answer-header">Expected Visual Result</div>
+      <div class="output-panel">
+        <div class="output-topbar"><span class="output-label">Brightness Effect by Gamma</span></div>
+        <div class="output-content">
+γ = 0.4 → <span style="color:#ffd33d;">Noticeably brighter</span> — dark regions lifted significantly<br>
+γ = 1.0 → <span style="color:#8b9eb5;">Identical to original</span> — r^1 = r (identity)<br>
+γ = 2.5 → <span style="color:#4a5568;">Much darker</span> — mid-tones compressed toward black<br><br>
+All three images should have the <span style="color:#85e89d;">same maximum white point</span><br>
+because 1^γ = 1 regardless of γ value.
+        </div>
+      </div>
+    </div>
+
+    <button class="complete-btn" onclick="markDone(3)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ TASK 4 -->
+<div class="task-card" id="task4">
+  <div class="task-header" onclick="toggleTask(4)">
+    <div class="task-num-wrap"><span class="num">4</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Pointwise Operations</span>
+      <div class="task-title">Logarithmic Transform &amp; Dynamic Range</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body4">
+  <div class="task-body-inner">
+    <p class="objective">Apply the logarithmic transformation and understand why it's especially powerful for images with very high dynamic range — like the magnitude spectrum of a Fourier transform, where the DC component can be millions of times brighter than other components.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Formula &amp; Choosing c</div>
+      <span class="formula-line">s = c · log(1 + r)</span>
+      <p style="margin-top:0.6rem;font-size:0.88rem;">To choose c so the output spans [0, 255]: set c = 255 / log(1 + 255) ≈ 45.9. This guarantees the brightest input (255) maps to exactly 255 in the output. For darker images, a smaller c compresses more.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task4_log.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>  <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'05.jpg'</span>);
+<span class="var">Ig</span> <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);
+<span class="var">Id</span> <span class="op">=</span> <span class="fn">double</span>(<span class="var">Ig</span>);          <span class="cm">% work in [0,255] range</span>
+
+<span class="cm">% c that maps max output to 255 exactly</span>
+<span class="var">c_full</span> <span class="op">=</span> <span class="num">255</span> / <span class="fn">log</span>(<span class="num">1</span> <span class="op">+</span> <span class="num">255</span>);  <span class="cm">% ≈ 45.9</span>
+
+<span class="cm">% Compare c=15 (partial range) vs c_full (full range)</span>
+<span class="var">lg15</span>  <span class="op">=</span> <span class="fn">uint8</span>(<span class="num">15</span>      <span class="op">.*</span> <span class="fn">log</span>(<span class="num">1</span> <span class="op">+</span> <span class="var">Id</span>));
+<span class="var">lgFull</span><span class="op">=</span> <span class="fn">uint8</span>(<span class="var">c_full</span> <span class="op">.*</span> <span class="fn">log</span>(<span class="num">1</span> <span class="op">+</span> <span class="var">Id</span>));
+
+<span class="fn">figure</span>;
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">3</span>,<span class="num">1</span>); <span class="fn">imshow</span>(<span class="var">Ig</span>);     <span class="fn">title</span>(<span class="st">'Original'</span>);
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">3</span>,<span class="num">2</span>); <span class="fn">imshow</span>(<span class="var">lg15</span>);   <span class="fn">title</span>(<span class="st">'Log  c=15  (partial)'</span>);
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">3</span>,<span class="num">3</span>); <span class="fn">imshow</span>(<span class="var">lgFull</span>); <span class="fn">title</span>(<span class="st">'Log  c\approx45.9  (full range)'</span>);</pre>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h4a')"><span class="hint-icon">💡</span>Why log(1 + r) and not log(r)?</button>
+      <button class="answer-toggle" onclick="toggleAnswer(this,'ans4')">⊕ Show c Derivation</button>
+    </div>
+    <div class="hint-content" id="h4a">The natural log of 0 is negative infinity (−∞). Any completely black pixel (r=0) would create a mathematical singularity. Adding 1 ensures the minimum input is log(1+0) = log(1) = 0, which correctly maps to black output. The +1 is a standard regularization trick.</div>
+    <div class="answer-block" id="ans4">
+      <div class="answer-header">Derivation of c for full-range output</div>
+      <div class="output-panel">
+        <div class="output-topbar"><span class="output-label">Math</span></div>
+        <div class="output-content">
+We want: when r = 255 (max input), s = 255 (max output).<br><br>
+255 = c · log(1 + 255)<br>
+255 = c · log(256)<br>
+  c = 255 / log(256)<br>
+  c = 255 / 5.545<br>
+  c ≈ <span style="color:#ffd33d;">45.99</span><br><br>
+In MATLAB: c = 255 / log(1+255);  % ≈ 45.9
+        </div>
+      </div>
+    </div>
+
+    <button class="complete-btn" onclick="markDone(4)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+  <div class="section-break">
+    <div class="section-break-line"></div>
+    <div class="section-break-text">Part II — Histograms &amp; Equalization</div>
+    <div class="section-break-line"></div>
+  </div>
+
+<!-- ══════════════════════════════════ TASK 5 -->
+<div class="task-card" id="task5">
+  <div class="task-header" onclick="toggleTask(5)">
+    <div class="task-num-wrap"><span class="num">5</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Histograms</span>
+      <div class="task-title">Compute &amp; Plot a Histogram Manually</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body5">
+  <div class="task-body-inner">
+    <p class="objective">Compute the image histogram without using <code>imhist()</code> — count how many pixels fall at each gray level from 0 to 255. Then plot both the raw count histogram and the normalized version (PMF). Compare with MATLAB's built-in to verify.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Formula</div>
+      <span class="formula-line">h(r<sub>k</sub>) = number of pixels with intensity exactly r<sub>k</sub></span>
+      <span class="formula-line" style="margin-left:1rem;">h<sub>n</sub>(r<sub>k</sub>) = h(r<sub>k</sub>) / (M × N)&nbsp;&nbsp;&nbsp;→&nbsp;&nbsp;sums to 1.0</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task5_histogram.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>   <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'image.jpg'</span>);
+<span class="var">Ig</span>  <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);
+[<span class="var">M</span>,<span class="var">N</span>] <span class="op">=</span> <span class="fn">size</span>(<span class="var">Ig</span>);
+<span class="var">L</span>   <span class="op">=</span> <span class="num">256</span>;
+
+<span class="cm">% ── Method 1: vectorized (fast) ───────────────────────────</span>
+<span class="var">h</span> <span class="op">=</span> <span class="fn">zeros</span>(<span class="num">1</span>, <span class="var">L</span>);
+<span class="kw">for</span> <span class="var">k</span> <span class="op">=</span> <span class="num">0</span><span class="op">:</span><span class="var">L</span><span class="op">-</span><span class="num">1</span>
+    <span class="var">h</span>(<span class="var">k</span><span class="op">+</span><span class="num">1</span>) <span class="op">=</span> <span class="fn">sum</span>(<span class="var">Ig</span>(<span class="op">:</span>) <span class="op">==</span> <span class="nc">uint8</span>(<span class="var">k</span>));  <span class="cm">% count pixels equal to k</span>
+<span class="kw">end</span>
+<span class="cm">% Verify: sum(h) should equal M*N</span>
+<span class="fn">fprintf</span>(<span class="st">'Sum of histogram: %d (should be %d)\n'</span>, <span class="fn">sum</span>(<span class="var">h</span>), <span class="var">M</span><span class="op">*</span><span class="var">N</span>);
+
+<span class="cm">% ── Normalized histogram (PMF) ────────────────────────────</span>
+<span class="var">hn</span> <span class="op">=</span> <span class="var">h</span> / <span class="fn">sum</span>(<span class="var">h</span>);
+<span class="fn">fprintf</span>(<span class="st">'Sum of hn: %.6f (should be 1.000000)\n'</span>, <span class="fn">sum</span>(<span class="var">hn</span>));
+
+<span class="cm">% ── Plot both ─────────────────────────────────────────────</span>
+<span class="fn">figure</span>;
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">2</span>,<span class="num">1</span>);
+<span class="fn">bar</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="var">h</span>, <span class="num">1</span>, <span class="st">'EdgeColor'</span>, <span class="st">'none'</span>, <span class="st">'FaceColor'</span>, [<span class="num">0.3</span> <span class="num">0.5</span> <span class="num">0.8</span>]);
+<span class="fn">xlabel</span>(<span class="st">'Gray Level'</span>); <span class="fn">ylabel</span>(<span class="st">'Pixel Count'</span>); <span class="fn">title</span>(<span class="st">'Histogram h(r)'</span>);
+
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">2</span>,<span class="num">2</span>);
+<span class="fn">bar</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="var">hn</span>, <span class="num">1</span>, <span class="st">'EdgeColor'</span>, <span class="st">'none'</span>, <span class="st">'FaceColor'</span>, [<span class="num">0.8</span> <span class="num">0.4</span> <span class="num">0.2</span>]);
+<span class="fn">xlabel</span>(<span class="st">'Gray Level'</span>); <span class="fn">ylabel</span>(<span class="st">'Probability'</span>); <span class="fn">title</span>(<span class="st">'Normalized h_n(r)'</span>);</pre>
+    </div>
+
+    <div class="output-panel">
+      <div class="output-topbar">
+        <span class="output-label">Command Window Output</span>
+        <span class="output-ok">● expected output</span>
+      </div>
+      <div class="output-content">
+Sum of histogram: 307200  (should be 307200)<br>
+Sum of hn: 1.000000  (should be 1.000000)
+      </div>
+    </div>
+
+    <!-- Mini histogram visualization -->
+    <div class="output-panel" style="margin-top:0.8rem;">
+      <div class="output-topbar"><span class="output-label">Typical Histogram Shape — Dark Image</span></div>
+      <div style="padding:0.5rem 1rem 0.3rem;">
+        <div class="hist-sim" id="histSim1"></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#4a5568;padding:0 0.7rem 0.5rem;display:flex;justify-content:space-between;">
+          <span>0 (black)</span><span>128</span><span>255 (white)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h5a')"><span class="hint-icon">💡</span>Why k+1 in h(k+1)?</button>
+      <button class="hint-btn" onclick="toggleHint(this,'h5b')"><span class="hint-icon">💡</span>Reading the histogram shape</button>
+    </div>
+    <div class="hint-content" id="h5a">MATLAB arrays start at index 1, but gray levels start at 0. So gray level 0 maps to <code>h(1)</code>, gray level 1 maps to <code>h(2)</code>, and gray level 255 maps to <code>h(256)</code>. The offset of +1 bridges this gap between 0-based intensity values and 1-based MATLAB indexing.</div>
+    <div class="hint-content" id="h5b">A histogram skewed left (lots of bars near 0) means the image is dark/underexposed. Skewed right means overexposed. A narrow peak in the middle means low contrast (all pixels are mid-gray). Multiple peaks can indicate distinct objects with different brightness levels.</div>
+
+    <button class="complete-btn" onclick="markDone(5)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ TASK 6 -->
+<div class="task-card" id="task6">
+  <div class="task-header" onclick="toggleTask(6)">
+    <div class="task-num-wrap"><span class="num">6</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Histogram Equalization</span>
+      <div class="task-title">Manual Histogram Equalization</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-med">Medium</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body6">
+  <div class="task-body-inner">
+    <p class="objective">Implement histogram equalization from scratch — without calling <code>histeq()</code>. This forces you to understand the CDF-based mapping. The output should have an approximately flat histogram, spreading intensities across the full range.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">The 4-Step Algorithm</div>
+      <p style="font-size:0.88rem;margin-bottom:0.5rem;">Step 1: compute normalized histogram. Step 2: compute CDF (cumulative sum). Step 3: scale CDF to [0, 255]. Step 4: use the result as a lookup table for every pixel.</p>
+      <span class="formula-line">s<sub>k</sub> = round((L−1) · CDF(r<sub>k</sub>))</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task6_histeq_manual.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>   <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'image.jpg'</span>);
+<span class="var">Ig</span>  <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);
+<span class="var">L</span>   <span class="op">=</span> <span class="num">256</span>;
+
+<span class="cm">% Step 1 — Normalized histogram</span>
+<span class="var">h</span>   <span class="op">=</span> <span class="fn">imhist</span>(<span class="var">Ig</span>, <span class="var">L</span>);       <span class="cm">% built-in ok here — we're doing equalization manually</span>
+<span class="var">hn</span>  <span class="op">=</span> <span class="var">h</span> / <span class="fn">sum</span>(<span class="var">h</span>);           <span class="cm">% PMF, sums to 1</span>
+
+<span class="cm">% Step 2 — CDF (cumulative distribution function)</span>
+<span class="var">cdf</span> <span class="op">=</span> <span class="fn">cumsum</span>(<span class="var">hn</span>);           <span class="cm">% cdf(k) = Prob(pixel ≤ gray level k-1)</span>
+
+<span class="cm">% Step 3 — Lookup table T: old gray level → new gray level</span>
+<span class="var">T</span>   <span class="op">=</span> <span class="fn">round</span>((<span class="var">L</span><span class="op">-</span><span class="num">1</span>) <span class="op">.*</span> <span class="var">cdf</span>);  <span class="cm">% scale CDF to [0,255]</span>
+
+<span class="cm">% Step 4 — Apply mapping (T is indexed 1..256, pixel values are 0..255)</span>
+<span class="var">Ieq</span> <span class="op">=</span> <span class="var">T</span>(<span class="fn">double</span>(<span class="var">Ig</span>) <span class="op">+</span> <span class="num">1</span>);   <span class="cm">% +1 for 1-based indexing</span>
+<span class="var">Ieq</span> <span class="op">=</span> <span class="fn">uint8</span>(<span class="var">Ieq</span>);
+
+<span class="cm">% Display all four panels</span>
+<span class="fn">figure</span>(<span class="st">'Units'</span>,<span class="st">'normalized'</span>,<span class="st">'Position'</span>,[<span class="num">0.1</span> <span class="num">0.1</span> <span class="num">0.8</span> <span class="num">0.75</span>]);
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">1</span>); <span class="fn">imshow</span>(<span class="var">Ig</span>);   <span class="fn">title</span>(<span class="st">'Original Image'</span>);
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">2</span>); <span class="fn">bar</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="var">hn</span>);  <span class="fn">title</span>(<span class="st">'Original Histogram'</span>);
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">3</span>); <span class="fn">imshow</span>(<span class="var">Ieq</span>);   <span class="fn">title</span>(<span class="st">'Equalized Image'</span>);
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">4</span>); <span class="fn">bar</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="fn">imhist</span>(<span class="var">Ieq</span>,<span class="num">256</span>)/<span class="fn">sum</span>(<span class="fn">imhist</span>(<span class="var">Ieq</span>,<span class="num">256</span>)));
+                <span class="fn">title</span>(<span class="st">'Equalized Histogram (approx. flat)'</span>);</pre>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h6a')"><span class="hint-icon">💡</span>What does cumsum do exactly?</button>
+      <button class="hint-btn" onclick="toggleHint(this,'h6b')"><span class="hint-icon">💡</span>Why does the result look "washed out"?</button>
+      <button class="answer-toggle" onclick="toggleAnswer(this,'ans6')">⊕ Show CDF trace example</button>
+    </div>
+    <div class="hint-content" id="h6a"><code>cumsum([a, b, c, d])</code> returns <code>[a, a+b, a+b+c, a+b+c+d]</code>. For a normalized histogram that sums to 1, the last element of cumsum will always be exactly 1.0. This running total is the CDF — it tells you the probability that any pixel has intensity ≤ k.</div>
+    <div class="hint-content" id="h6b">Histogram equalization maximizes contrast by spreading values over the full range. But human perception doesn't always prefer maximum entropy — skin tones may wash out, skies become over-bright. The algorithm is mathematically optimal by information theory, but perceptually it sometimes needs manual fine-tuning afterward.</div>
+    <div class="answer-block" id="ans6">
+      <div class="answer-header">CDF Trace for a Dark Image</div>
+      <div class="output-panel">
+        <div class="output-topbar"><span class="output-label">Sample CDF Values</span></div>
+        <div class="output-content">
+Gray Level  |  PMF h_n  |  CDF      |  T = round(255 * CDF)<br>
+──────────────────────────────────────────────────────────<br>
+          0  |   0.0012   |   0.0012  |   <span style="color:#85e89d;">0</span><br>
+         50  |   0.0200   |   0.2100  |  <span style="color:#85e89d;">54</span><br>
+        100  |   0.0350   |   0.5800  | <span style="color:#85e89d;">148</span><br>
+        150  |   0.0280   |   0.8200  | <span style="color:#85e89d;">209</span><br>
+        200  |   0.0100   |   0.9600  | <span style="color:#85e89d;">245</span><br>
+        255  |   0.0008   |   1.0000  | <span style="color:#85e89d;">255</span><br>
+<br>
+Pixels at gray level 50 get remapped to ~54.<br>
+Pixels at gray level 100 get remapped to ~148.<br>
+→ The mapping stretches the mid-tones outward.
+        </div>
+      </div>
+    </div>
+
+    <button class="complete-btn" onclick="markDone(6)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ TASK 7 -->
+<div class="task-card" id="task7">
+  <div class="task-header" onclick="toggleTask(7)">
+    <div class="task-num-wrap"><span class="num">7</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Histogram Matching</span>
+      <div class="task-title">Match Histogram to a Target Distribution</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body7">
+  <div class="task-body-inner">
+    <p class="objective">Use MATLAB's <code>histeq()</code> with a target histogram to match the output image's intensity distribution to a specified shape. This is like equalization, but instead of targeting a flat/uniform distribution, you target any arbitrary distribution.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Two-Step Derivation</div>
+      <p style="font-size:0.88rem;">First equalize the input image (apply T using input CDF). Then apply the inverse CDF of the target distribution (apply G⁻¹). The composition G⁻¹(T(r)) maps input intensities to match the target.</p>
+      <span class="formula-line">z<sub>k</sub> = G⁻¹(s<sub>k</sub>)  where  s<sub>k</sub> = T(r<sub>k</sub>) = CDF<sub>input</sub>(r<sub>k</sub>)</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task7_histmatch.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>   <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'slr.jpg'</span>);
+<span class="var">Ig</span>  <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);
+
+<span class="fn">load</span>(<span class="st">'hist.mat'</span>);               <span class="cm">% loads target histogram into 'hist'</span>
+
+<span class="cm">% Perform histogram matching</span>
+<span class="cm">% 'hist' must be normalized (sums to 1) and have 256 elements</span>
+<span class="fn">fprintf</span>(<span class="st">'Target hist sum: %.4f\n'</span>, <span class="fn">sum</span>(<span class="var">hist</span>));   <span class="cm">% sanity check</span>
+<span class="var">I_matched</span> <span class="op">=</span> <span class="fn">histeq</span>(<span class="var">Ig</span>, <span class="var">hist</span>);
+
+<span class="cm">% Compare histograms side by side</span>
+<span class="fn">figure</span>;
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">1</span>); <span class="fn">imshow</span>(<span class="var">Ig</span>);          <span class="fn">title</span>(<span class="st">'Input Image'</span>);
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">2</span>); <span class="fn">imshow</span>(<span class="var">I_matched</span>);   <span class="fn">title</span>(<span class="st">'Matched Image'</span>);
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">3</span>);
+    <span class="fn">bar</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="fn">imhist</span>(<span class="var">Ig</span>,<span class="num">256</span>)<span class="op">/</span><span class="fn">numel</span>(<span class="var">Ig</span>)); <span class="fn">title</span>(<span class="st">'Input Histogram'</span>);
+<span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">2</span>,<span class="num">4</span>);
+    <span class="fn">bar</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="fn">imhist</span>(<span class="var">I_matched</span>,<span class="num">256</span>)<span class="op">/</span><span class="fn">numel</span>(<span class="var">I_matched</span>));
+    <span class="fn">hold on</span>; <span class="fn">plot</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="var">hist</span>, <span class="st">'r-'</span>, <span class="st">'LineWidth'</span>, <span class="num">2</span>);
+    <span class="fn">legend</span>(<span class="st">'Actual'</span>, <span class="st">'Target'</span>); <span class="fn">title</span>(<span class="st">'Matched vs. Target Histogram'</span>);</pre>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h7a')"><span class="hint-icon">💡</span>histeq(I) vs histeq(I, hgram)</button>
+    </div>
+    <div class="hint-content" id="h7a"><code>histeq(I)</code> with one argument targets a <em>uniform</em> distribution — this is standard histogram equalization. <code>histeq(I, hgram)</code> with two arguments targets the distribution in <code>hgram</code> — this is histogram matching (or specification). The target <code>hgram</code> must be a 1×256 normalized vector summing to 1.</div>
+
+    <button class="complete-btn" onclick="markDone(7)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+  <div class="section-break">
+    <div class="section-break-line"></div>
+    <div class="section-break-text">Part III — Spatial Filtering</div>
+    <div class="section-break-line"></div>
+  </div>
+
+<!-- ══════════════════════════════════ TASK 8 -->
+<div class="task-card" id="task8">
+  <div class="task-header" onclick="toggleTask(8)">
+    <div class="task-num-wrap"><span class="num">8</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Spatial Filtering</span>
+      <div class="task-title">Design &amp; Apply an Averaging Filter</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body8">
+  <div class="task-body-inner">
+    <p class="objective">Manually construct a 5×5 box filter (without <code>fspecial</code>) and apply it to an image. Then deliberately omit the normalization factor to observe what happens — this is the classic mistake that produces a saturated white image.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Box Filter — What it does</div>
+      <p style="font-size:0.88rem;">Each output pixel becomes the average of the 5×5 neighborhood (25 pixels) centered on it. This blurs the image by replacing sharp intensity differences with smooth transitions. The dividing factor 1/25 keeps the brightness level unchanged.</p>
+      <span class="formula-line">h = (1/25) × ones(5,5)  →  sum(h(:)) = 1.0  ✓</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task8_avgfilter.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>   <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'board.jpg'</span>);
+<span class="var">Ig</span>  <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);
+
+<span class="cm">% ── Filter A: 5×5 normalized box filter ──────────────────</span>
+<span class="var">h5</span>   <span class="op">=</span> <span class="fn">ones</span>(<span class="num">5</span>,<span class="num">5</span>) / <span class="num">25</span>;       <span class="cm">% sum = 1.0 → unity gain → same brightness</span>
+<span class="var">I5</span>   <span class="op">=</span> <span class="fn">imfilter</span>(<span class="var">Ig</span>, <span class="var">h5</span>);
+
+<span class="cm">% ── Filter B: 5×5 WITHOUT normalization ──────────────────</span>
+<span class="var">h5ns</span> <span class="op">=</span> <span class="fn">ones</span>(<span class="num">5</span>,<span class="num">5</span>);             <span class="cm">% sum = 25 → amplifies by factor 25!</span>
+<span class="var">I5ns</span> <span class="op">=</span> <span class="fn">imfilter</span>(<span class="fn">double</span>(<span class="var">Ig</span>), <span class="var">h5ns</span>);
+<span class="cm">% Values now in [0, 255*25] = [0, 6375] — uint8 clips to 255 = white</span>
+<span class="fn">fprintf</span>(<span class="st">'Max value (unnormalized): %.0f\n'</span>, <span class="fn">max</span>(<span class="var">I5ns</span>(<span class="op">:</span>)));
+
+<span class="fn">figure</span>;
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">3</span>,<span class="num">1</span>); <span class="fn">imshow</span>(<span class="var">Ig</span>);            <span class="fn">title</span>(<span class="st">'Original'</span>);
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">3</span>,<span class="num">2</span>); <span class="fn">imshow</span>(<span class="var">I5</span>);            <span class="fn">title</span>(<span class="st">'5×5  Normalized (blurred)'</span>);
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">3</span>,<span class="num">3</span>); <span class="fn">imshow</span>(<span class="fn">uint8</span>(<span class="var">I5ns</span>));   <span class="fn">title</span>(<span class="st">'5×5  NO normalization (white!)'</span>);</pre>
+    </div>
+
+    <div class="output-panel">
+      <div class="output-topbar"><span class="output-label">Command Window Output</span><span class="output-ok">● expected</span></div>
+      <div class="output-content">
+Max value (unnormalized): 6375<br>
+<span style="color:#f87171;">→ uint8(6375) = 255  (saturated white)</span><br>
+→ Third subplot appears entirely white
+      </div>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h8a')"><span class="hint-icon">💡</span>Why does imfilter(Ig, h5) work with uint8 but not the unnormalized version?</button>
+    </div>
+    <div class="hint-content" id="h8a">When you call <code>imfilter</code> with a uint8 image, MATLAB automatically clips output values to [0,255]. So the normalized version (output ≈ original range) is fine. But for the unnormalized case, we convert to <code>double</code> first to <em>see</em> the actual large values — otherwise uint8 would silently saturate everything without showing you what happened.</div>
+
+    <button class="complete-btn" onclick="markDone(8)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ TASK 9 -->
+<div class="task-card" id="task9">
+  <div class="task-header" onclick="toggleTask(9)">
+    <div class="task-num-wrap"><span class="num">9</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Spatial Filtering</span>
+      <div class="task-title">Compare Filter Sizes — Blur vs. Detail</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-easy">Easy</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body9">
+  <div class="task-body-inner">
+    <p class="objective">Apply three different filter sizes (3×3, 7×7, and 15×15) and visually compare the blurring effect. Plot all results in a single figure and verify by computing the standard deviation of each output — a more blurred image has lower standard deviation.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Size Determines Blur Radius</div>
+      <p style="font-size:0.88rem;">A 3×3 filter averages over 9 pixels (radius ~1 pixel). A 15×15 filter averages over 225 pixels (radius ~7 pixels). Larger filters erase finer detail, smooth noise more aggressively, and make edges harder to detect. The trade-off is always: noise reduction vs. detail preservation.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task9_filtersize.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="var">I</span>    <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'board.jpg'</span>);
+<span class="var">Ig</span>   <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);
+<span class="var">sizes</span> <span class="op">=</span> [<span class="num">3</span>, <span class="num">7</span>, <span class="num">15</span>];
+
+<span class="fn">figure</span>(<span class="st">'Name'</span>, <span class="st">'Task 9 — Filter Size Comparison'</span>);
+<span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">4</span>,<span class="num">1</span>);
+<span class="fn">imshow</span>(<span class="var">Ig</span>); <span class="fn">title</span>(<span class="fn">sprintf</span>(<span class="st">'Original\n\sigma=%.1f'</span>, <span class="fn">std</span>(<span class="fn">double</span>(<span class="var">Ig</span>(<span class="op">:</span>)))));
+
+<span class="kw">for</span> <span class="var">k</span> <span class="op">=</span> <span class="num">1</span><span class="op">:</span><span class="num">3</span>
+    <span class="var">n</span>   <span class="op">=</span> <span class="var">sizes</span>(<span class="var">k</span>);
+    <span class="var">h</span>   <span class="op">=</span> <span class="fn">ones</span>(<span class="var">n</span>,<span class="var">n</span>) / <span class="var">n</span>^<span class="num">2</span>;       <span class="cm">% n×n normalized box filter</span>
+    <span class="var">out</span> <span class="op">=</span> <span class="fn">imfilter</span>(<span class="var">Ig</span>, <span class="var">h</span>);
+
+    <span class="cm">% Standard deviation measures spread of intensities (contrast proxy)</span>
+    <span class="var">s</span>   <span class="op">=</span> <span class="fn">std</span>(<span class="fn">double</span>(<span class="var">out</span>(<span class="op">:</span>)));
+
+    <span class="fn">subplot</span>(<span class="num">1</span>,<span class="num">4</span>,<span class="var">k</span><span class="op">+</span><span class="num">1</span>);
+    <span class="fn">imshow</span>(<span class="var">out</span>);
+    <span class="fn">title</span>(<span class="fn">sprintf</span>(<span class="st">'%d×%d filter\n\sigma=%.1f'</span>, <span class="var">n</span>, <span class="var">n</span>, <span class="var">s</span>));
+<span class="kw">end</span></pre>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h9a')"><span class="hint-icon">💡</span>Why does std decrease with larger filters?</button>
+      <button class="answer-toggle" onclick="toggleAnswer(this,'ans9')">⊕ Expected std values</button>
+    </div>
+    <div class="hint-content" id="h9a">Standard deviation measures how spread out the pixel values are. A sharp image has high contrast — pixels range widely from very dark to very bright, giving high std. After heavy averaging, neighboring pixels all look similar (the filter "flattens" local differences), so the overall spread of values decreases. Lower std = more uniform = more blurred.</div>
+    <div class="answer-block" id="ans9">
+      <div class="answer-header">Expected Standard Deviation Trend</div>
+      <div class="output-panel">
+        <div class="output-topbar"><span class="output-label">Approximate Values (vary by image)</span></div>
+        <div class="output-content">
+Original (no filter):  σ ≈ 72.4  (wide range of intensities)<br>
+3×3  filter:           σ ≈ 69.8  (slight decrease)<br>
+7×7  filter:           σ ≈ 61.2  (moderate decrease)<br>
+15×15 filter:          σ ≈ 45.0  (significant decrease)<br><br>
+→ Larger kernel = lower σ = more blurred<br>
+→ The relationship is approximately: σ_out ≈ σ_in / sqrt(n)
+        </div>
+      </div>
+    </div>
+
+    <button class="complete-btn" onclick="markDone(9)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ TASK 10 -->
+<div class="task-card" id="task10">
+  <div class="task-header" onclick="toggleTask(10)">
+    <div class="task-num-wrap"><span class="num">10</span><span class="check">✓</span></div>
+    <div class="task-title-group">
+      <span class="task-category">Full Pipeline</span>
+      <div class="task-title">Build a Complete Image Enhancement Pipeline</div>
+    </div>
+    <div class="task-meta">
+      <span class="diff-badge diff-med">Medium</span>
+      <span class="done-stamp">Done</span>
+      <span class="task-arrow">▼</span>
+    </div>
+  </div>
+  <div class="task-body" id="body10">
+  <div class="task-body-inner">
+    <p class="objective">Combine everything you've learned into one pipeline: load → convert → denoise with spatial filter → equalize histogram → apply power law refinement → display and save. This mirrors a real-world image pre-processing workflow.</p>
+
+    <div class="concept-box">
+      <div class="concept-box-title">Pipeline Order Matters</div>
+      <p style="font-size:0.88rem;">The order of operations significantly affects the result. Filtering before equalization removes noise so the histogram isn't skewed by outliers. Equalization before the power law ensures contrast is spread first, then gently tuned. Try reversing steps and notice the visual difference.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-topbar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        <span class="code-filename">task10_pipeline.m</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre><span class="fn">clear</span>; <span class="fn">clc</span>; <span class="fn">close all</span>;
+
+<span class="cm">% ── STAGE 0: Load & Convert ───────────────────────────────</span>
+<span class="var">I</span>  <span class="op">=</span> <span class="fn">imread</span>(<span class="st">'image.jpg'</span>);
+<span class="var">I0</span> <span class="op">=</span> <span class="fn">rgb2gray</span>(<span class="var">I</span>);              <span class="cm">% single channel grayscale</span>
+
+<span class="cm">% ── STAGE 1: Denoise with 3×3 averaging filter ────────────</span>
+<span class="var">h_denoise</span> <span class="op">=</span> <span class="fn">ones</span>(<span class="num">3</span>,<span class="num">3</span>) / <span class="num">9</span>;
+<span class="var">I1</span> <span class="op">=</span> <span class="fn">imfilter</span>(<span class="var">I0</span>, <span class="var">h_denoise</span>, <span class="st">'replicate'</span>); <span class="cm">% replicate avoids border darkening</span>
+
+<span class="cm">% ── STAGE 2: Histogram equalization ───────────────────────</span>
+<span class="var">h</span>   <span class="op">=</span> <span class="fn">imhist</span>(<span class="var">I1</span>, <span class="num">256</span>);
+<span class="var">hn</span>  <span class="op">=</span> <span class="var">h</span> / <span class="fn">sum</span>(<span class="var">h</span>);
+<span class="var">cdf</span> <span class="op">=</span> <span class="fn">cumsum</span>(<span class="var">hn</span>);
+<span class="var">T</span>   <span class="op">=</span> <span class="fn">round</span>(<span class="num">255</span> <span class="op">*</span> <span class="var">cdf</span>);
+<span class="var">I2</span>  <span class="op">=</span> <span class="fn">uint8</span>(<span class="var">T</span>(<span class="fn">double</span>(<span class="var">I1</span>) <span class="op">+</span> <span class="num">1</span>));
+
+<span class="cm">% ── STAGE 3: Power law refinement (gentle brightening) ────</span>
+<span class="var">gamma</span> <span class="op">=</span> <span class="num">0.85</span>;                    <span class="cm">% slight lift of dark areas</span>
+<span class="var">I3</span>    <span class="op">=</span> <span class="fn">im2uint8</span>(<span class="fn">im2double</span>(<span class="var">I2</span>) <span class="op">.^</span> <span class="var">gamma</span>);
+
+<span class="cm">% ── Display full pipeline ─────────────────────────────────</span>
+<span class="fn">figure</span>(<span class="st">'Name'</span>,<span class="st">'Task 10 — Full Pipeline'</span>,<span class="st">'Units'</span>,<span class="st">'normalized'</span>,<span class="st">'Position'</span>,[<span class="num">0.05</span> <span class="num">0.05</span> <span class="num">0.9</span> <span class="num">0.85</span>]);
+
+<span class="var">stages</span> <span class="op">=</span> {<span class="var">I0</span>, <span class="var">I1</span>, <span class="var">I2</span>, <span class="var">I3</span>};
+<span class="var">labels</span> <span class="op">=</span> {<span class="st">'Stage 0: Original'</span>, <span class="st">'Stage 1: Denoised'</span>, ...
+          <span class="st">'Stage 2: Equalized'</span>, <span class="st">'Stage 3: Gamma \gamma=0.85'</span>};
+<span class="kw">for</span> <span class="var">k</span> <span class="op">=</span> <span class="num">1</span><span class="op">:</span><span class="num">4</span>
+    <span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">4</span>,<span class="var">k</span>); <span class="fn">imshow</span>(<span class="var">stages</span>{<span class="var">k</span>}); <span class="fn">title</span>(<span class="var">labels</span>{<span class="var">k</span>});
+    <span class="fn">subplot</span>(<span class="num">2</span>,<span class="num">4</span>,<span class="var">k</span><span class="op">+</span><span class="num">4</span>);
+    <span class="fn">bar</span>(<span class="num">0</span><span class="op">:</span><span class="num">255</span>, <span class="fn">imhist</span>(<span class="var">stages</span>{<span class="var">k</span>},<span class="num">256</span>)<span class="op">/</span><span class="fn">numel</span>(<span class="var">stages</span>{<span class="var">k</span>}), <span class="num">1</span>, <span class="st">'EdgeColor'</span>,<span class="st">'none'</span>);
+    <span class="fn">ylim</span>([<span class="num">0</span> <span class="num">0.04</span>]);
+<span class="kw">end</span>
+<span class="fn">sgtitle</span>(<span class="st">'Image Enhancement Pipeline — All Stages'</span>);
+
+<span class="cm">% ── Save final result ─────────────────────────────────────</span>
+<span class="fn">imwrite</span>(<span class="var">I3</span>, <span class="st">'enhanced_output.png'</span>);
+<span class="fn">fprintf</span>(<span class="st">'Pipeline complete. Saved to enhanced_output.png\n'</span>);</pre>
+    </div>
+
+    <div class="output-panel">
+      <div class="output-topbar"><span class="output-label">Command Window Output</span><span class="output-ok">● expected</span></div>
+      <div class="output-content">
+Pipeline complete. Saved to enhanced_output.png
+      </div>
+    </div>
+
+    <div class="hints-area">
+      <button class="hint-btn" onclick="toggleHint(this,'h10a')"><span class="hint-icon">💡</span>Why 'replicate' in imfilter?</button>
+      <button class="hint-btn" onclick="toggleHint(this,'h10b')"><span class="hint-icon">💡</span>What does sgtitle do?</button>
+      <button class="answer-toggle" onclick="toggleAnswer(this,'ans10')">⊕ Expected visual progression</button>
+    </div>
+    <div class="hint-content" id="h10a">By default, <code>imfilter</code> pads the image borders with zeros (black). When you filter near the edge, the kernel partially overlaps a region of all zeros, dragging the average down — this creates dark borders in the output. <code>'replicate'</code> pads by repeating the edge pixel value instead, which is much more natural and avoids the dark border artifact.</div>
+    <div class="hint-content" id="h10b"><code>sgtitle()</code> adds a "super-title" to the entire figure (above all subplots), while each individual <code>title()</code> call labels only its own subplot. Available since MATLAB R2018b.</div>
+    <div class="answer-block" id="ans10">
+      <div class="answer-header">Expected Visual Progression</div>
+      <div class="output-panel">
+        <div class="output-topbar"><span class="output-label">Stage-by-Stage Description</span></div>
+        <div class="output-content">
+Stage 0 → Original: concentrated histogram, possibly dark<br>
+Stage 1 → Denoised: histogram unchanged, image slightly<br>
+          smoother (noise reduced)<br>
+Stage 2 → Equalized: histogram spread flat, high contrast,<br>
+          may look slightly harsh or "over-processed"<br>
+Stage 3 → Gamma refined: gentle brightening, histogram<br>
+          shifts slightly left, perceptually more natural<br><br>
+<span style="color:#85e89d;">✓ Bottom row of subplots shows histogram evolution</span><br>
+<span style="color:#85e89d;">✓ Stage 2 should have the flattest histogram</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="complete-btn" onclick="markDone(10)">✓ Mark Complete</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ COMPLETION SECTION -->
+<div id="completionSection" style="display:none;margin-top:3rem;text-align:center;">
+  <div style="background:var(--ink);border-radius:6px;padding:3rem 2rem;position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(200,146,42,0.12),transparent);pointer-events:none;"></div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:rgba(200,146,42,0.6);text-transform:uppercase;margin-bottom:1rem;">Lab Complete</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2.5rem;color:var(--paper);line-height:1.1;margin-bottom:0.5rem;">10 / 10<br><span style="font-size:1rem;color:var(--gold);">Tasks Completed</span></div>
+    <p style="color:rgba(245,240,232,0.6);font-size:0.9rem;max-width:500px;margin:1.5rem auto 0;font-style:italic;">You have covered pointwise operations, histogram analysis, histogram equalization &amp; matching, and spatial domain filtering. All core tools of image enhancement.</p>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>
+  ECE359 · Ain Shams University · Spring 2025 &nbsp;·&nbsp; Lab 2 Report — Image Enhancement &nbsp;·&nbsp; Signal Processing for Multimedia
+</footer>
+
+<script>
+/* ═══════════════════════════ STATE */
+const totalTasks = 10;
+const done = new Array(totalTasks+1).fill(false);
+
+const taskMeta = [
+  null,
+  {label:"Load Image"},
+  {label:"Negative"},
+  {label:"Gamma"},
+  {label:"Log"},
+  {label:"Histogram"},
+  {label:"Equalize"},
+  {label:"Matching"},
+  {label:"Avg Filter"},
+  {label:"Filter Size"},
+  {label:"Pipeline"}
+];
+
+/* ═══════════════════════════ INIT */
+window.addEventListener('DOMContentLoaded', () => {
+  buildSummaryGrid();
+  buildDots();
+  updateProgress();
+  generateHistogram();
+});
+
+function buildSummaryGrid(){
+  const grid = document.getElementById('summaryGrid');
+  for(let i=1;i<=totalTasks;i++){
+    const el = document.createElement('div');
+    el.className='summary-item';
+    el.id=`si${i}`;
+    el.innerHTML=`<span class="si-num">${String(i).padStart(2,'0')}</span><span class="si-label">${taskMeta[i].label}</span>`;
+    el.addEventListener('click',()=>{ toggleTask(i); document.getElementById(`task${i}`).scrollIntoView({behavior:'smooth',block:'start'}); });
+    grid.appendChild(el);
+  }
+}
+
+function buildDots(){
+  const wrap=document.getElementById('taskDots');
+  for(let i=1;i<=totalTasks;i++){
+    const d=document.createElement('div');
+    d.className='task-dot';
+    d.id=`dot${i}`;
+    d.title=`Task ${i}`;
+    d.addEventListener('click',()=>{ document.getElementById(`task${i}`).scrollIntoView({behavior:'smooth'}); });
+    wrap.appendChild(d);
+  }
+}
+
+/* ═══════════════════════════ TOGGLE TASK */
+function toggleTask(n){
+  const card=document.getElementById(`task${n}`);
+  const body=document.getElementById(`body${n}`);
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  card.classList.toggle('active',!isOpen);
+}
+
+/* ═══════════════════════════ MARK DONE */
+function markDone(n){
+  if(done[n]) return;
+  done[n]=true;
+  const card=document.getElementById(`task${n}`);
+  card.classList.add('done');
+  document.getElementById(`dot${n}`).classList.add('done');
+  document.getElementById(`si${n}`).classList.add('done-item');
+  updateProgress();
+  // auto-close after brief delay
+  setTimeout(()=>{
+    const body=document.getElementById(`body${n}`);
+    body.classList.remove('open');
+    card.classList.remove('active');
+    // open next if exists
+    if(n<totalTasks){
+      toggleTask(n+1);
+      document.getElementById(`task${n+1}`).scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  },400);
+}
+
+function updateProgress(){
+  const count=done.slice(1).filter(Boolean).length;
+  document.getElementById('progressFill').style.width=`${(count/totalTasks)*100}%`;
+  document.getElementById('progressCount').textContent=`${count}/${totalTasks}`;
+  if(count===totalTasks){
+    document.getElementById('completionSection').style.display='block';
+    setTimeout(()=>document.getElementById('completionSection').scrollIntoView({behavior:'smooth'}),500);
+  }
+}
+
+/* ═══════════════════════════ HINTS */
+function toggleHint(btn, id){
+  const el=document.getElementById(id);
+  const open=el.classList.toggle('open');
+  btn.classList.toggle('revealed',open);
+  btn.innerHTML=open
+    ?`<span class="hint-icon">✓</span>${btn.innerHTML.replace(/<span[^>]*>.*?<\/span>/,'').trim()}`
+    :`<span class="hint-icon">💡</span>${btn.innerHTML.replace(/<span[^>]*>.*?<\/span>/,'').trim()}`;
+}
+
+function toggleAnswer(btn, id){
+  const el=document.getElementById(id);
+  const open=el.classList.toggle('open');
+  btn.classList.toggle('revealed',open);
+  btn.textContent=open?'⊖ Hide Answer':'⊕ Show Expected Result';
+  if(btn.textContent==='⊖ Hide Answer'&&btn.getAttribute('onclick')&&btn.getAttribute('onclick').includes('ans9')) btn.textContent='⊖ Hide Answer';
+  btn.textContent=open?'⊖ Hide Answer':'⊕ Show Expected Result';
+}
+
+/* ═══════════════════════════ COPY CODE */
+function copyCode(btn){
+  const pre=btn.closest('.code-wrap').querySelector('pre');
+  const text=pre.innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copied!';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='Copy'; btn.classList.remove('copied'); },2000);
+  });
+}
+
+/* ═══════════════════════════ HISTOGRAM SIMULATION */
+function generateHistogram(){
+  const container=document.getElementById('histSim1');
+  if(!container) return;
+  // Simulate a dark-skewed histogram
+  const heights=[];
+  for(let i=0;i<64;i++) heights.push(Math.max(5, 85*Math.exp(-((i-20)*(i-20))/(2*15*15)) + Math.random()*8));
+  for(let i=64;i<128;i++) heights.push(Math.max(3, 40*Math.exp(-((i-85)*(i-85))/(2*25*25)) + Math.random()*5));
+  for(let i=128;i<192;i++) heights.push(Math.max(1, 15*Math.exp(-((i-155)*(i-155))/(2*20*20)) + Math.random()*3));
+  for(let i=192;i<256;i++) heights.push(Math.max(0, 5*Math.exp(-((i-210)*(i-210))/(2*18*18)) + Math.random()*2));
+  const max=Math.max(...heights);
+  heights.forEach(h=>{
+    const bar=document.createElement('div');
+    bar.className='hist-bar';
+    bar.style.height=`${(h/max)*100}%`;
+    container.appendChild(bar);
+  });
+}
+</script>
+</body>
+</html>
