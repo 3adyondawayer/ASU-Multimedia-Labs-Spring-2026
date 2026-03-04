@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<!-- saved from url=(0047)file:///A:/Masters%20Files/AI/greedyclaude.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greedy Best-First Search — Maze Solver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link href="./Greedy Best-First Search — Maze Solver_files/css2" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0b0e17;
+  --surface:   #111827;
+  --surface2:  #1a2236;
+  --border:    #1f2d45;
+  --border2:   #263550;
+
+  --amber:     #f5a623;
+  --amber-dim: #c47d0e;
+  --cyan:      #22d3ee;
+  --emerald:   #10b981;
+  --rose:      #f43f5e;
+  --violet:    #7c3aed;
+  --sky:       #38bdf8;
+  --gold:      #fcd34d;
+
+  --text:      #e2e8f0;
+  --text-muted:#7a8ba8;
+  --text-dim:  #3d5278;
+
+  --cell-size: 52px;
+  --radius:    10px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  overflow-x: hidden;
+}
+
+/* subtle grid texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ══════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════ */
+header {
+  text-align: center;
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+header h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(18px, 3vw, 26px);
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+header h1 span { color: var(--amber); }
+
+header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+/* ══════════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════════ */
+.layout {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title::before {
+  content: '';
+  display: block;
+  width: 6px; height: 6px;
+  background: var(--cyan);
+  border-radius: 50%;
+}
+
+/* ══════════════════════════════════════════════
+   GRID PANEL
+══════════════════════════════════════════════ */
+.grid-panel { min-width: 540px; }
+
+.draw-mode-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.draw-mode-bar .lbl {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  margin-right: 4px;
+}
+
+.mode-btn {
+  padding: 5px 12px;
+  border: 1.5px solid var(--border2);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  background: transparent;
+  color: var(--text-muted);
+}
+.mode-btn:hover { filter: brightness(1.4); }
+.mode-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(252,211,77,.08); }
+
+/* Grid */
+.grid-wrapper {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.row-labels {
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+  gap: 2px;
+}
+.row-lbl {
+  height: var(--cell-size);
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.grid-body { display: flex; flex-direction: column; gap: 2px; }
+.grid-row  { display: flex; gap: 2px; }
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s, filter .12s, box-shadow .15s;
+  position: relative;
+  border: 1.5px solid transparent;
+  user-select: none;
+}
+.cell:hover { transform: scale(1.08); z-index: 2; }
+
+/* Cell types */
+.cell.open     { background: rgba(245,166,35,.18); border-color: rgba(245,166,35,.35); color: var(--amber); }
+.cell.wall     { background: rgba(15,20,35,.9);    border-color: var(--border);         color: #2a3450; }
+.cell.start    { background: rgba(251,146,60,.25); border-color: #fb923c;               color: #fb923c; }
+.cell.goal     { background: rgba(16,185,129,.2);  border-color: var(--emerald);        color: var(--emerald); }
+.cell.explored { background: rgba(124,58,237,.2);  border-color: rgba(124,58,237,.5);   color: var(--violet); opacity: .9; }
+.cell.path     { background: rgba(34,211,238,.2);  border-color: var(--cyan);           color: var(--cyan);
+                 box-shadow: 0 0 10px rgba(34,211,238,.25); }
+.cell.flash    { background: rgba(244,63,94,.3);   border-color: var(--rose);           color: var(--rose); }
+
+/* h-value mini label on cell */
+.cell .hval {
+  position: absolute;
+  top: 3px; right: 4px;
+  font-size: 8px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity .2s;
+  color: inherit;
+}
+.show-h .cell .hval { opacity: .65; }
+
+/* Col labels */
+.col-labels {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+  margin-left: 26px;
+}
+.col-lbl {
+  width: var(--cell-size);
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1.5px solid transparent;
+  border-radius: 7px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+.btn-solve   { background: var(--emerald); color: #fff; }
+.btn-load    { background: var(--sky);     color: #0c1a26; }
+.btn-reset   { background: var(--surface2); border-color: var(--border2); color: var(--text-muted); }
+.btn-clear   { background: transparent;    border-color: var(--border2); color: var(--text-dim); }
+.btn-hval    { background: transparent;    border-color: var(--border2); color: var(--text-dim); font-size: 11px; }
+.btn-hval.on { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,.08); }
+
+/* Legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+.legend-dot  { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* Status / path */
+.status-bar {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  display: none;
+}
+.status-bar.ok  { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3); color: var(--emerald); }
+.status-bar.err { background: rgba(244,63,94,.1);   border: 1px solid rgba(244,63,94,.3);  color: var(--rose); }
+
+.path-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(34,211,238,.06);
+  border: 1px solid rgba(34,211,238,.2);
+  border-radius: 7px;
+  font-size: 12px;
+  display: none;
+}
+.path-box .path-title { color: var(--cyan); font-weight: 700; font-size: 11px; letter-spacing: .5px; margin-bottom: 8px; }
+.path-chip {
+  display: inline-block;
+  background: rgba(34,211,238,.12);
+  border: 1px solid rgba(34,211,238,.3);
+  color: var(--cyan);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  margin: 2px;
+}
+.path-arrow { color: var(--text-dim); font-size: 10px; margin: 0 1px; }
+
+/* ══════════════════════════════════════════════
+   TABLE PANEL
+══════════════════════════════════════════════ */
+.table-panel { min-width: 620px; flex: 1; max-width: 760px; }
+
+.table-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-radius: 7px;
+  border: 1px solid var(--border);
+}
+.table-desc strong { color: var(--amber); }
+.table-desc .tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin: 0 2px;
+  font-weight: 700;
+}
+.tag.w  { background: rgba(244,63,94,.15);  color: var(--rose); }
+.tag.v  { background: rgba(100,116,139,.15); color: #64748b; }
+.tag.g  { background: rgba(16,185,129,.15); color: var(--emerald); }
+
+.table-scroll {
+  max-height: 490px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.table-scroll::-webkit-scrollbar { width: 6px; }
+.table-scroll::-webkit-scrollbar-track { background: transparent; }
+.table-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+thead th {
+  background: var(--surface2);
+  color: var(--text-muted);
+  padding: 10px 12px;
+  text-align: center;
+  position: sticky; top: 0; z-index: 3;
+  border-bottom: 1.5px solid var(--border2);
+  font-size: 11px;
+  letter-spacing: .5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 7px 12px;
+  text-align: center;
+  border-bottom: 1px solid rgba(31,45,69,.6);
+  transition: background .1s;
+  white-space: nowrap;
+}
+tbody tr { transition: background .1s; }
+tbody tr:hover { background: rgba(34,211,238,.04) !important; cursor: pointer; }
+tbody tr.hl   { background: rgba(56,189,248,.08) !important; }
+tbody tr.goal-row { background: rgba(16,185,129,.06) !important; }
+tbody tr.dead-row { background: rgba(100,116,139,.04) !important; }
+
+/* Table value styles */
+.v-step   { color: var(--text-dim); font-size: 11px; }
+.v-from   { color: var(--text-muted); }
+.v-cell   { color: var(--sky); font-weight: 700; font-size: 13px; }
+.v-wall   { color: #3d5278; font-weight: 700; }
+.v-vis    { color: #3d5278; font-style: italic; }
+.v-open   { color: var(--text); }
+.v-chosen { color: var(--emerald); font-weight: 700; font-size: 13px; }
+.v-dir    { color: var(--amber); font-weight: 700; }
+.v-goal   { color: var(--gold); font-weight: 700; }
+.v-dead   { color: #3d5278; }
+.v-val    { color: var(--amber); font-weight: 600; }
+.v-nb     { color: var(--text-muted); }
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 50px 20px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   ALGO EXPLANATION
+══════════════════════════════════════════════ */
+.algo-note {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: rgba(252,211,77,.05);
+  border: 1px solid rgba(252,211,77,.15);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.algo-note strong { color: var(--gold); }
+.algo-note code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: rgba(255,255,255,.07);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--amber);
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  :root { --cell-size: 40px; }
+  .grid-panel, .table-panel { min-width: unset; width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 Greedy Best-First Search — <span>Maze Solver</span></h1>
+  <p>Manhattan Distance Heuristic &nbsp;·&nbsp; h(n) = |col<sub>n</sub> − col<sub>G</sub>| + |row<sub>n</sub> − row<sub>G</sub>|</p>
+</header>
+
+<div class="layout">
+
+  <!-- ═══ GRID PANEL ═══ -->
+  <div class="card grid-panel">
+    <div class="card-title">Maze Grid — 9 × 6</div>
+
+    <div class="draw-mode-bar">
+      <span class="lbl">DRAW:</span>
+      <button class="mode-btn active" id="mb-wall" onclick="setMode(&#39;wall&#39;)">Wall</button>
+      <button class="mode-btn" id="mb-open" onclick="setMode(&#39;open&#39;)">Open</button>
+      <button class="mode-btn" id="mb-start" onclick="setMode(&#39;start&#39;)">Start S</button>
+      <button class="mode-btn" id="mb-goal" onclick="setMode(&#39;goal&#39;)">Goal G</button>
+    </div>
+
+    <div class="grid-wrapper">
+      <div class="row-labels" id="rowLabels"><div class="row-lbl">6</div><div class="row-lbl">5</div><div class="row-lbl">4</div><div class="row-lbl">3</div><div class="row-lbl">2</div><div class="row-lbl">1</div></div>
+      <div>
+        <div class="grid-body" id="gridBody"><div class="grid-row"><div class="cell path" data-row="5" data-col="0"><span class="hval">5</span></div><div class="cell path" data-row="5" data-col="1"><span class="hval">4</span></div><div class="cell path" data-row="5" data-col="2"><span class="hval">3</span></div><div class="cell path" data-row="5" data-col="3"><span class="hval">2</span></div><div class="cell path" data-row="5" data-col="4"><span class="hval">1</span></div><div class="cell goal" data-row="5" data-col="5">G<span class="hval">0</span></div><div class="cell open" data-row="5" data-col="6"><span class="hval">1</span></div><div class="cell open" data-row="5" data-col="7"><span class="hval">2</span></div><div class="cell open" data-row="5" data-col="8"><span class="hval">3</span></div></div><div class="grid-row"><div class="cell path" data-row="4" data-col="0"><span class="hval">6</span></div><div class="cell wall" data-row="4" data-col="1"><span class="hval">5</span></div><div class="cell wall" data-row="4" data-col="2"><span class="hval">4</span></div><div class="cell wall" data-row="4" data-col="3"><span class="hval">3</span></div><div class="cell wall" data-row="4" data-col="4"><span class="hval">2</span></div><div class="cell wall" data-row="4" data-col="5"><span class="hval">1</span></div><div class="cell wall" data-row="4" data-col="6"><span class="hval">2</span></div><div class="cell wall" data-row="4" data-col="7"><span class="hval">3</span></div><div class="cell open" data-row="4" data-col="8"><span class="hval">4</span></div></div><div class="grid-row"><div class="cell path" data-row="3" data-col="0"><span class="hval">7</span></div><div class="cell path" data-row="3" data-col="1"><span class="hval">6</span></div><div class="cell path" data-row="3" data-col="2"><span class="hval">5</span></div><div class="cell path" data-row="3" data-col="3"><span class="hval">4</span></div><div class="cell path" data-row="3" data-col="4"><span class="hval">3</span></div><div class="cell explored" data-row="3" data-col="5"><span class="hval">2</span></div><div class="cell explored" data-row="3" data-col="6"><span class="hval">3</span></div><div class="cell wall" data-row="3" data-col="7"><span class="hval">4</span></div><div class="cell open" data-row="3" data-col="8"><span class="hval">5</span></div></div><div class="grid-row"><div class="cell wall" data-row="2" data-col="0"><span class="hval">8</span></div><div class="cell wall" data-row="2" data-col="1"><span class="hval">7</span></div><div class="cell wall" data-row="2" data-col="2"><span class="hval">6</span></div><div class="cell wall" data-row="2" data-col="3"><span class="hval">5</span></div><div class="cell path" data-row="2" data-col="4"><span class="hval">4</span></div><div class="cell wall" data-row="2" data-col="5"><span class="hval">3</span></div><div class="cell explored" data-row="2" data-col="6"><span class="hval">4</span></div><div class="cell wall" data-row="2" data-col="7"><span class="hval">5</span></div><div class="cell open" data-row="2" data-col="8"><span class="hval">6</span></div></div><div class="grid-row"><div class="cell wall" data-row="1" data-col="0"><span class="hval">9</span></div><div class="cell wall" data-row="1" data-col="1"><span class="hval">8</span></div><div class="cell wall" data-row="1" data-col="2"><span class="hval">7</span></div><div class="cell wall" data-row="1" data-col="3"><span class="hval">6</span></div><div class="cell path" data-row="1" data-col="4"><span class="hval">5</span></div><div class="cell wall" data-row="1" data-col="5"><span class="hval">4</span></div><div class="cell explored" data-row="1" data-col="6"><span class="hval">5</span></div><div class="cell explored" data-row="1" data-col="7"><span class="hval">6</span></div><div class="cell open" data-row="1" data-col="8"><span class="hval">7</span></div></div><div class="grid-row"><div class="cell start" data-row="0" data-col="0">S<span class="hval">10</span></div><div class="cell path" data-row="0" data-col="1"><span class="hval">9</span></div><div class="cell path" data-row="0" data-col="2"><span class="hval">8</span></div><div class="cell path" data-row="0" data-col="3"><span class="hval">7</span></div><div class="cell path" data-row="0" data-col="4"><span class="hval">6</span></div><div class="cell wall" data-row="0" data-col="5"><span class="hval">5</span></div><div class="cell wall" data-row="0" data-col="6"><span class="hval">6</span></div><div class="cell wall" data-row="0" data-col="7"><span class="hval">7</span></div><div class="cell wall" data-row="0" data-col="8"><span class="hval">8</span></div></div></div>
+        <div class="col-labels" id="colLabels"><div class="col-lbl">a</div><div class="col-lbl">b</div><div class="col-lbl">c</div><div class="col-lbl">d</div><div class="col-lbl">e</div><div class="col-lbl">f</div><div class="col-lbl">g</div><div class="col-lbl">h</div><div class="col-lbl">i</div></div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#fb923c;opacity:.8"></div>Start S</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981;opacity:.8"></div>Goal G</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(245,166,35,.5)"></div>Open</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a2236;border:1px solid #1f2d45"></div>Wall</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(124,58,237,.5)"></div>Explored</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(34,211,238,.4)"></div>Path</div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-load" onclick="loadExample()">📋 Load Example</button>
+      <button class="btn btn-solve" onclick="solve()">▶ Solve</button>
+      <button class="btn btn-reset" onclick="resetView()">↺ Reset View</button>
+      <button class="btn btn-clear" onclick="clearAll()">🗑 Clear</button>
+      <button class="btn btn-hval" id="hvalBtn" onclick="toggleH()">h values</button>
+    </div>
+
+    <div class="status-bar ok" id="statusBar" style="display: block;">✅  Solution found! Expanded 24 cells · Path length: 19 cells</div>
+
+    <div class="path-box" id="pathBox" style="display: block;">
+      <div class="path-title">SOLUTION PATH</div>
+      <div id="pathCells"><span class="path-chip">a1</span><span class="path-arrow">→</span><span class="path-chip">b1</span><span class="path-arrow">→</span><span class="path-chip">c1</span><span class="path-arrow">→</span><span class="path-chip">d1</span><span class="path-arrow">→</span><span class="path-chip">e1</span><span class="path-arrow">→</span><span class="path-chip">e2</span><span class="path-arrow">→</span><span class="path-chip">e3</span><span class="path-arrow">→</span><span class="path-chip">e4</span><span class="path-arrow">→</span><span class="path-chip">d4</span><span class="path-arrow">→</span><span class="path-chip">c4</span><span class="path-arrow">→</span><span class="path-chip">b4</span><span class="path-arrow">→</span><span class="path-chip">a4</span><span class="path-arrow">→</span><span class="path-chip">a5</span><span class="path-arrow">→</span><span class="path-chip">a6</span><span class="path-arrow">→</span><span class="path-chip">b6</span><span class="path-arrow">→</span><span class="path-chip">c6</span><span class="path-arrow">→</span><span class="path-chip">d6</span><span class="path-arrow">→</span><span class="path-chip">e6</span><span class="path-arrow">→</span><span class="path-chip">f6</span></div>
+    </div>
+
+    <div class="algo-note">
+      <strong>How it works:</strong> Greedy Best-First Search always expands the cell with the
+      <strong>lowest heuristic value</strong> h(n). It uses a priority queue (open list) and a
+      closed set to avoid re-visiting cells. The heuristic is
+      <code>h(n) = |col_n − col_G| + |row_n − row_G|</code> — Manhattan distance to Goal G.
+      It is <em>not</em> guaranteed to find the shortest path, but it is fast.
+    </div>
+  </div>
+
+  <!-- ═══ TABLE PANEL ═══ -->
+  <div class="card table-panel">
+    <div class="card-title">Algorithm Steps</div>
+
+    <div class="table-desc">
+      Each row = one cell expanded from the open list (lowest h first).
+      <strong>L/U/R/D</strong> = heuristic h of that neighbor &nbsp;|&nbsp;
+      <span class="tag w">W</span> = wall / out-of-bounds &nbsp;
+      <span class="tag v">V</span> = already visited (closed) &nbsp;
+      <span class="tag g">green</span> = chosen direction &nbsp;|&nbsp;
+      <strong>Value</strong> = h of current cell &nbsp;|&nbsp;
+      <strong>Next Best</strong> = second-lowest h among valid neighbors.
+      <br>Click any row to flash that cell on the grid.
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>From</th>
+            <th>Cell</th>
+            <th>L</th>
+            <th>U</th>
+            <th>R</th>
+            <th>D</th>
+            <th>Direction</th>
+            <th>Value</th>
+            <th>Next Best</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"><tr>
+      <td class="v-step">1</td>
+      <td class="v-from">—</td>
+      <td class="v-cell">a1</td>
+      <td class="v-wall">W</td><td class="v-wall">W</td><td class="v-chosen">9</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">10</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">2</td>
+      <td class="v-from">a1</td>
+      <td class="v-cell">b1</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">8</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">9</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">3</td>
+      <td class="v-from">b1</td>
+      <td class="v-cell">c1</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">7</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">8</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">4</td>
+      <td class="v-from">c1</td>
+      <td class="v-cell">d1</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">6</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">7</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">5</td>
+      <td class="v-from">d1</td>
+      <td class="v-cell">e1</td>
+      <td class="v-vis">V</td><td class="v-chosen">5</td><td class="v-wall">W</td><td class="v-wall">W</td>
+      <td class="v-dir">U</td>
+      <td class="v-val">6</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">6</td>
+      <td class="v-from">e1</td>
+      <td class="v-cell">e2</td>
+      <td class="v-wall">W</td><td class="v-chosen">4</td><td class="v-wall">W</td><td class="v-vis">V</td>
+      <td class="v-dir">U</td>
+      <td class="v-val">5</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">7</td>
+      <td class="v-from">e2</td>
+      <td class="v-cell">e3</td>
+      <td class="v-wall">W</td><td class="v-chosen">3</td><td class="v-wall">W</td><td class="v-vis">V</td>
+      <td class="v-dir">U</td>
+      <td class="v-val">4</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">8</td>
+      <td class="v-from">e3</td>
+      <td class="v-cell">e4</td>
+      <td class="v-open">4</td><td class="v-wall">W</td><td class="v-chosen">2</td><td class="v-vis">V</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">3</td>
+      <td class="v-nb">4</td>
+    </tr><tr>
+      <td class="v-step">9</td>
+      <td class="v-from">e4</td>
+      <td class="v-cell">f4</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">3</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">2</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">10</td>
+      <td class="v-from">f4</td>
+      <td class="v-cell">g4</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-wall">W</td><td class="v-chosen">4</td>
+      <td class="v-dir">D</td>
+      <td class="v-val">3</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">11</td>
+      <td class="v-from">e4</td>
+      <td class="v-cell">d4</td>
+      <td class="v-chosen">5</td><td class="v-wall">W</td><td class="v-vis">V</td><td class="v-wall">W</td>
+      <td class="v-dir">L</td>
+      <td class="v-val">4</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">12</td>
+      <td class="v-from">g4</td>
+      <td class="v-cell">g3</td>
+      <td class="v-wall">W</td><td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">5</td>
+      <td class="v-dir">D</td>
+      <td class="v-val">4</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">13</td>
+      <td class="v-from">d4</td>
+      <td class="v-cell">c4</td>
+      <td class="v-chosen">6</td><td class="v-wall">W</td><td class="v-vis">V</td><td class="v-wall">W</td>
+      <td class="v-dir">L</td>
+      <td class="v-val">5</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">14</td>
+      <td class="v-from">g3</td>
+      <td class="v-cell">g2</td>
+      <td class="v-wall">W</td><td class="v-vis">V</td><td class="v-chosen">6</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">5</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">15</td>
+      <td class="v-from">c4</td>
+      <td class="v-cell">b4</td>
+      <td class="v-chosen">7</td><td class="v-wall">W</td><td class="v-vis">V</td><td class="v-wall">W</td>
+      <td class="v-dir">L</td>
+      <td class="v-val">6</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">16</td>
+      <td class="v-from">g2</td>
+      <td class="v-cell">h2</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">7</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">6</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">17</td>
+      <td class="v-from">b4</td>
+      <td class="v-cell">a4</td>
+      <td class="v-wall">W</td><td class="v-chosen">6</td><td class="v-vis">V</td><td class="v-wall">W</td>
+      <td class="v-dir">U</td>
+      <td class="v-val">7</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">18</td>
+      <td class="v-from">a4</td>
+      <td class="v-cell">a5</td>
+      <td class="v-wall">W</td><td class="v-chosen">5</td><td class="v-wall">W</td><td class="v-vis">V</td>
+      <td class="v-dir">U</td>
+      <td class="v-val">6</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">19</td>
+      <td class="v-from">a5</td>
+      <td class="v-cell">a6</td>
+      <td class="v-wall">W</td><td class="v-wall">W</td><td class="v-chosen">4</td><td class="v-vis">V</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">5</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">20</td>
+      <td class="v-from">a6</td>
+      <td class="v-cell">b6</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">3</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">4</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">21</td>
+      <td class="v-from">b6</td>
+      <td class="v-cell">c6</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">2</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">3</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">22</td>
+      <td class="v-from">c6</td>
+      <td class="v-cell">d6</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">1</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">2</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr>
+      <td class="v-step">23</td>
+      <td class="v-from">d6</td>
+      <td class="v-cell">e6</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-chosen">0</td><td class="v-wall">W</td>
+      <td class="v-dir">R</td>
+      <td class="v-val">1</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr><tr class="goal-row">
+      <td class="v-step">24</td>
+      <td class="v-from">e6</td>
+      <td class="v-cell">f6</td>
+      <td class="v-vis">V</td><td class="v-wall">W</td><td class="v-open">1</td><td class="v-wall">W</td>
+      <td class="v-goal">★ GOAL</td>
+      <td class="v-val">0</td>
+      <td class="v-nb"><span style="color:var(--text-dim)">—</span></td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+/* ──────────────────────────────────────────────
+   CONSTANTS
+────────────────────────────────────────────── */
+const ROWS = 6, COLS = 9;
+const COL_NAMES = ['a','b','c','d','e','f','g','h','i'];
+
+// Cell type codes
+const WALL = 0, OPEN = 1, START = 2, GOAL = 3;
+
+/* ──────────────────────────────────────────────
+   STATE
+────────────────────────────────────────────── */
+let grid     = [];    // grid[row][col]; row 0 = bottom (row 1), row 5 = top (row 6)
+let startPos = null;  // {row, col}
+let goalPos  = null;  // {row, col}
+let editMode = 'wall';
+let showH    = false;
+let cellOverrides = {}; // {key: className} for path/explored overlay
+
+/* ──────────────────────────────────────────────
+   EXAMPLE MAZE
+   (matches the problem image)
+     a  b  c  d  e  f  g  h  i
+  6  O  O  O  O  O  G  O  O  O
+  5  O  W  W  W  W  W  W  W  O
+  4  O  O  O  O  O  O  W  W  W
+  3  W  W  W  O  W  O  W  W  O
+  2  W  W  W  W  O  O  W  W  W
+  1  S  O  O  O  O  W  W  W  W
+────────────────────────────────────────────── */
+const EXAMPLE_GRID = [
+  // row 1 (index 0): S at a1; b1–e1 open; f1–i1 wall
+  [START, OPEN, OPEN, OPEN, OPEN, WALL, WALL, WALL, WALL],
+  // row 2 (index 1): e2,f2 open; rest wall
+  [WALL,  WALL, WALL, WALL, OPEN, OPEN, WALL, WALL, WALL],
+  // row 3 (index 2): d3, f3, i3 open; rest wall
+  [WALL,  WALL, WALL, OPEN, WALL, OPEN, WALL, WALL, OPEN],
+  // row 4 (index 3): a4–f4 open; g4–i4 wall
+  [OPEN,  OPEN, OPEN, OPEN, OPEN, OPEN, WALL, WALL, WALL],
+  // row 5 (index 4): a5, i5 open; rest wall
+  [OPEN,  WALL, WALL, WALL, WALL, WALL, WALL, WALL, OPEN],
+  // row 6 (index 5): all open; G at f6
+  [OPEN,  OPEN, OPEN, OPEN, OPEN, GOAL, OPEN, OPEN, OPEN],
+];
+
+/* ──────────────────────────────────────────────
+   HELPERS
+────────────────────────────────────────────── */
+const key  = (r, c) => `${r},${c}`;
+const name = (r, c) => COL_NAMES[c] + (r + 1);
+
+// Manhattan distance to goal
+function heuristic(r, c) {
+  if (!goalPos) return 0;
+  return Math.abs(r - goalPos.row) + Math.abs(c - goalPos.col);
+}
+
+/* ──────────────────────────────────────────────
+   GRID RENDERING
+────────────────────────────────────────────── */
+function renderGrid() {
+  const gridBody  = document.getElementById('gridBody');
+  const rowLabels = document.getElementById('rowLabels');
+  const colLabels = document.getElementById('colLabels');
+
+  gridBody.innerHTML = '';
+  rowLabels.innerHTML = '';
+  colLabels.innerHTML = '';
+
+  // Render from top (row index 5 = row 6) down to bottom (row index 0 = row 1)
+  for (let r = ROWS - 1; r >= 0; r--) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'grid-row';
+
+    for (let c = 0; c < COLS; c++) {
+      const cellEl = document.createElement('div');
+      const k = key(r, c);
+      cellEl.className = 'cell ' + (cellOverrides[k] || getCellClass(r, c));
+      cellEl.dataset.row = r;
+      cellEl.dataset.col = c;
+
+      // Main label (S or G)
+      const v = grid[r][c];
+      if (v === START) cellEl.textContent = 'S';
+      else if (v === GOAL)  cellEl.textContent = 'G';
+
+      // Small h-value badge
+      const hspan = document.createElement('span');
+      hspan.className = 'hval';
+      hspan.textContent = goalPos ? heuristic(r, c) : '';
+      cellEl.appendChild(hspan);
+
+      cellEl.addEventListener('click', () => onCellClick(r, c));
+      rowDiv.appendChild(cellEl);
+    }
+
+    gridBody.appendChild(rowDiv);
+
+    // Row number label (rendered top→bottom so first = row 6)
+    const lbl = document.createElement('div');
+    lbl.className = 'row-lbl';
+    lbl.textContent = r + 1;
+    rowLabels.appendChild(lbl);
+  }
+
+  // Column letter labels
+  for (let c = 0; c < COLS; c++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'col-lbl';
+    lbl.textContent = COL_NAMES[c];
+    colLabels.appendChild(lbl);
+  }
+
+  // Apply show-h toggle
+  if (showH) document.getElementById('gridBody').classList.add('show-h');
+}
+
+function getCellClass(r, c) {
+  switch (grid[r][c]) {
+    case START: return 'start';
+    case GOAL:  return 'goal';
+    case OPEN:  return 'open';
+    default:    return 'wall';
+  }
+}
+
+/* ──────────────────────────────────────────────
+   CELL CLICK (edit mode)
+────────────────────────────────────────────── */
+function onCellClick(r, c) {
+  clearResults();
+  switch (editMode) {
+    case 'wall':
+      if (grid[r][c] === START) startPos = null;
+      if (grid[r][c] === GOAL)  goalPos  = null;
+      grid[r][c] = WALL; break;
+    case 'open':
+      if (grid[r][c] === START) startPos = null;
+      if (grid[r][c] === GOAL)  goalPos  = null;
+      grid[r][c] = OPEN; break;
+    case 'start':
+      if (startPos) grid[startPos.row][startPos.col] = OPEN;
+      grid[r][c] = START;
+      startPos = {row: r, col: c}; break;
+    case 'goal':
+      if (goalPos) grid[goalPos.row][goalPos.col] = OPEN;
+      grid[r][c] = GOAL;
+      goalPos = {row: r, col: c}; break;
+  }
+  renderGrid();
+}
+
+function setMode(mode) {
+  editMode = mode;
+  ['wall','open','start','goal'].forEach(m =>
+    document.getElementById(`mb-${m}`).classList.toggle('active', m === mode)
+  );
+}
+
+function toggleH() {
+  showH = !showH;
+  document.getElementById('hvalBtn').classList.toggle('on', showH);
+  const gb = document.getElementById('gridBody');
+  gb.classList.toggle('show-h', showH);
+}
+
+/* ──────────────────────────────────────────────
+   LOAD / CLEAR
+────────────────────────────────────────────── */
+function loadExample() {
+  grid     = EXAMPLE_GRID.map(row => [...row]);
+  startPos = {row: 0, col: 0}; // a1
+  goalPos  = {row: 5, col: 5}; // f6
+  clearResults();
+  renderGrid();
+}
+
+function clearAll() {
+  grid     = Array.from({length: ROWS}, () => Array(COLS).fill(WALL));
+  startPos = null;
+  goalPos  = null;
+  clearResults();
+  renderGrid();
+}
+
+function resetView() {
+  clearResults();
+  renderGrid();
+}
+
+function clearResults() {
+  cellOverrides = {};
+  document.getElementById('statusBar').style.display = 'none';
+  document.getElementById('pathBox').style.display = 'none';
+  document.getElementById('tableBody').innerHTML =
+    '<tr><td colspan="10" class="empty-msg">Press <strong style="color:var(--emerald)">▶ Solve</strong> to run the algorithm.</td></tr>';
+}
+
+/* ──────────────────────────────────────────────
+   GREEDY BEST-FIRST SEARCH
+   Priority: minimum h(n) = Manhattan distance to goal
+────────────────────────────────────────────── */
+function greedyBFS() {
+  if (!startPos || !goalPos) {
+    alert('Please set both a Start (S) and Goal (G) cell.');
+    return null;
+  }
+
+  const gr = goalPos.row, gc = goalPos.col;
+  const h  = (r, c) => Math.abs(r - gr) + Math.abs(c - gc);
+
+  // Directions in display order: Left, Up, Right, Down
+  const DIRS = [
+    {name:'L', dr: 0, dc:-1},
+    {name:'U', dr: 1, dc: 0},
+    {name:'R', dr: 0, dc: 1},
+    {name:'D', dr:-1, dc: 0},
+  ];
+
+  // Open list = priority queue (sorted by h ascending)
+  let open   = [{row: startPos.row, col: startPos.col, from: null, h: h(startPos.row, startPos.col)}];
+  let closed = new Set();     // keys of already-expanded cells
+  let parent = {};            // key → {row,col} or null  (for path tracing)
+  let steps  = [];            // table rows collected during search
+
+  while (open.length > 0) {
+    // Always expand the cell with the lowest h value
+    open.sort((a, b) => a.h - b.h);
+    const cur = open.shift();
+    const k = key(cur.row, cur.col);
+
+    if (closed.has(k)) continue; // Already expanded via a shorter‑h path
+    closed.add(k);
+    parent[k] = cur.from;
+
+    /* ---- Evaluate the 4 neighbours ---- */
+    const nInfo    = {};   // direction → display info
+    const candidates = []; // valid, unvisited neighbours
+
+    for (const d of DIRS) {
+      const nr = cur.row + d.dr;
+      const nc = cur.col + d.dc;
+      const nk = key(nr, nc);
+
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) {
+        // Out-of-bounds → treat as wall
+        nInfo[d.name] = {label: 'W', css: 'v-wall'};
+      } else if (grid[nr][nc] === WALL) {
+        nInfo[d.name] = {label: 'W', css: 'v-wall'};
+      } else if (closed.has(nk)) {
+        // Already in closed set — we cannot revisit
+        nInfo[d.name] = {label: 'V', css: 'v-vis'};
+      } else {
+        const nh = h(nr, nc);
+        nInfo[d.name] = {label: String(nh), css: 'v-open', h: nh};
+        candidates.push({dir: d.name, row: nr, col: nc, h: nh});
+      }
+    }
+
+    // Sort candidates by h; the greedy choice is the first one
+    candidates.sort((a, b) => a.h - b.h);
+
+    const isGoal = (cur.row === gr && cur.col === gc);
+    const chosen  = isGoal ? '★ GOAL' : (candidates.length > 0 ? candidates[0].dir : '—');
+    const nextBest = candidates.length > 1 ? candidates[1].h : '—';
+
+    // Highlight the chosen direction in green
+    if (!isGoal && candidates.length > 0) {
+      nInfo[candidates[0].dir].css = 'v-chosen';
+    }
+
+    steps.push({
+      step: steps.length + 1,
+      from:  cur.from ? name(cur.from.row, cur.from.col) : '—',
+      cell:  name(cur.row, cur.col),
+      row: cur.row, col: cur.col,
+      L: nInfo['L'], U: nInfo['U'], R: nInfo['R'], D: nInfo['D'],
+      direction: chosen,
+      value: cur.h,
+      nextBest,
+      isGoal,
+      isDead: !isGoal && candidates.length === 0,
+    });
+
+    // ---- Goal reached ----
+    if (isGoal) {
+      // Trace path back through parent map
+      let path = [];
+      let node = {row: gr, col: gc};
+      while (node) {
+        path.unshift({...node});
+        node = parent[key(node.row, node.col)];
+      }
+      return {steps, path};
+    }
+
+    // Add unvisited, non-open-listed candidates to the open list
+    for (const cand of candidates) {
+      if (!open.some(x => x.row === cand.row && x.col === cand.col)) {
+        open.push({
+          row: cand.row, col: cand.col,
+          from: {row: cur.row, col: cur.col},
+          h: cand.h,
+        });
+      }
+    }
+  }
+
+  // No path found
+  return {steps, path: null};
+}
+
+/* ──────────────────────────────────────────────
+   SOLVE  (run algorithm + display results)
+────────────────────────────────────────────── */
+function solve() {
+  const result = greedyBFS();
+  if (!result) return;
+
+  const {steps, path} = result;
+
+  // ---- Build cell overlays ----
+  cellOverrides = {};
+  // Mark all expanded cells as "explored"
+  for (const s of steps) {
+    const k = key(s.row, s.col);
+    if (grid[s.row][s.col] !== START && grid[s.row][s.col] !== GOAL)
+      cellOverrides[k] = 'explored';
+  }
+  // Overwrite path cells with "path" style
+  if (path) {
+    for (const p of path) {
+      const k = key(p.row, p.col);
+      if (grid[p.row][p.col] !== START && grid[p.row][p.col] !== GOAL)
+        cellOverrides[k] = 'path';
+    }
+  }
+
+  renderGrid();
+  renderTable(steps);
+
+  // ---- Status bar ----
+  const sb = document.getElementById('statusBar');
+  sb.style.display = 'block';
+  if (path) {
+    sb.className = 'status-bar ok';
+    sb.textContent = `✅  Solution found! Expanded ${steps.length} cells · Path length: ${path.length} cells`;
+    showPathChips(path);
+  } else {
+    sb.className = 'status-bar err';
+    sb.textContent = '❌  No solution found — the goal is unreachable from the start.';
+  }
+}
+
+/* ──────────────────────────────────────────────
+   TABLE RENDERING
+────────────────────────────────────────────── */
+function renderTable(steps) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  for (const s of steps) {
+    const tr = document.createElement('tr');
+    if (s.isGoal) tr.className = 'goal-row';
+    else if (s.isDead) tr.className = 'dead-row';
+
+    // Format a neighbor cell (L/U/R/D)
+    const td = (info) => `<td class="${info.css}">${info.label}</td>`;
+
+    const dirCls  = s.isGoal ? 'v-goal' : (s.isDead ? 'v-dead' : 'v-dir');
+    const nbStr   = s.nextBest === '—' ? `<span style="color:var(--text-dim)">—</span>` : s.nextBest;
+
+    tr.innerHTML = `
+      <td class="v-step">${s.step}</td>
+      <td class="v-from">${s.from}</td>
+      <td class="v-cell">${s.cell}</td>
+      ${td(s.L)}${td(s.U)}${td(s.R)}${td(s.D)}
+      <td class="${dirCls}">${s.direction}</td>
+      <td class="v-val">${s.value}</td>
+      <td class="v-nb">${nbStr}</td>
+    `;
+
+    // Click a row → flash the corresponding cell on the grid
+    tr.addEventListener('click', () => {
+      document.querySelectorAll('#tableBody tr').forEach(r => r.classList.remove('hl'));
+      tr.classList.add('hl');
+
+      const cellEl = document.querySelector(`.cell[data-row="${s.row}"][data-col="${s.col}"]`);
+      if (cellEl) {
+        const prev = cellEl.className;
+        cellEl.className = 'cell flash';
+        setTimeout(() => { cellEl.className = prev; }, 700);
+      }
+
+      // Smooth scroll to the row
+      tr.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    });
+
+    tbody.appendChild(tr);
+  }
+}
+
+/* ──────────────────────────────────────────────
+   PATH DISPLAY
+────────────────────────────────────────────── */
+function showPathChips(path) {
+  const pb = document.getElementById('pathBox');
+  const pc = document.getElementById('pathCells');
+  pb.style.display = 'block';
+  pc.innerHTML = path.map((p, i) => {
+    const chip = `<span class="path-chip">${name(p.row, p.col)}</span>`;
+    return i < path.length - 1 ? chip + `<span class="path-arrow">→</span>` : chip;
+  }).join('');
+}
+
+/* ──────────────────────────────────────────────
+   INIT
+────────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  loadExample();
+});
+</script>
+
+</body></html>
